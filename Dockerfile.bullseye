@@ -1,0 +1,77 @@
+FROM debian:bullseye AS build
+
+ARG gstreamer_tag=1.18.5
+
+RUN apt-get upgrade -y
+RUN apt-get update && apt-get install -y git ninja-build cmake \
+    pkg-config libmount-dev flex bison bzip2
+
+RUN apt-get update && apt-get install -y python3-pip
+RUN pip3 install meson
+
+# minimize build by providing dev libraries
+RUN apt-get update && apt-get install -y zlib1g-dev libglib2.0-dev libffi-dev libssl-dev
+
+# plugins dependencies: soundtouch, opencv
+RUN apt-get update && apt-get install -y libsndfile1-dev libsoundtouch-dev libopencv-dev
+
+# build dlib
+WORKDIR /dlib/src
+COPY deps/dlib.tar.bz2 .
+RUN mkdir -p /dlib/src/build /dlib/install
+RUN tar -xvf ./dlib.tar.bz2 -C . --strip-components 1
+
+WORKDIR /dlib/src/build
+RUN cmake -GNinja \
+    -DCMAKE_INSTALL_PREFIX:PATH=/dlib/install \
+    -DCMAKE_INSTALL_LIBDIR:PATH=/dlib/install/lib \
+    -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DUSE_SSE2_INSTRUCTIONS=ON \
+    -DUSE_SSE4_INSTRUCTIONS=ON \
+    -DUSE_AVX_INSTRUCTIONS=ON \
+    -DDLIB_USE_CUDA=OFF \
+    ".."
+RUN ninja
+RUN ninja install
+
+# build gstreamer
+WORKDIR /gstreamer
+
+RUN mkdir /gstreamer/src
+RUN git clone https://gitlab.freedesktop.org/gstreamer/gst-build.git src
+
+WORKDIR /gstreamer/src
+
+RUN git checkout ${gstreamer_tag}
+RUN meson --prefix=/gstreamer/install -Ddevtools=enabled -Dtests=disabled build
+RUN ninja -C build
+RUN meson install -C build
+
+FROM debian:bullseye AS run
+
+RUN apt-get upgrade -y
+RUN apt-get update
+
+# dev versions may still be useful is image is used for dev purposes
+RUN apt-get update && apt-get install -y zlib1g-dev libglib2.0-dev libffi-dev libssl-dev
+
+# plugins dependencies: soundtouch, opencv
+RUN apt-get update && apt-get install -y libsndfile1 libsoundtouch1 libopencv-dev
+
+# opencv and dlib additionals
+RUN apt-get update && apt-get install -y libopencv-imgproc4.5 \
+    libopenblas-base \
+    libopenblas-dev \
+    liblapack-dev \
+    libdlib-data \
+    libopencv-calib3d-dev
+
+COPY --from=build /gstreamer/install /opt/gstreamer
+COPY --from=build /dlib/install /opt/dlib
+
+ENV PATH="${PATH}:/opt/gstreamer/bin"
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/gstreamer/lib/x86_64-linux-gnu:/opt/dlib/lib"
+ENV PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/opt/gstreamer/lib/x86_64-linux-gnu/pkgconfig:/opt/dlib/lib/pkgconfig"
+ENV GST_PLUGIN_PATH="/opt/gstreamer/lib/x86_64-linux-gnu/gstreamer-1.0/"
+ENV NVIDIA_DRIVER_CAPABILITIES all
