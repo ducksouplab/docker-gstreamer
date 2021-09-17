@@ -1,20 +1,24 @@
-# Docker image for GStreamer on Debian with nvcodec support
+# Debian-based Docker image for GStreamer
 
-Rely on [gst-build](https://gitlab.freedesktop.org/gstreamer/gst-build) to create a Debian based Docker image with GStreamer, nvidia nvcodec plugin, gstopencv and dlib.
+Rely on [gst-build](https://gitlab.freedesktop.org/gstreamer/gst-build) to create a Debian bullseye based Docker image with GStreamer, nvidia nvcodec plugin, gstopencv and dlib.
 
 Motivations:
 * `nvcodec` plugin is not installed (on Debian) with `apt-get install gstreamer1.0-plugins-bad`
 * possibility to choose GStreamer version
 * includes opencv and dlib
 
-## Preparation: download dlib src
+The resulting image is published on Docker Hub: https://hub.docker.com/repository/docker/creamlab/bullseye-gstreamer
+
+### Preparation
+
+Download dlib src:
 
 ```
 mkdir -p deps
 curl http://dlib.net/files/dlib-19.22.tar.bz2 --output deps/dlib.tar.bz2
 ```
 
-## Build and run with Debian bullseye
+### Build and run
 
 ```
 docker build --build-arg gstreamer_tag=1.18.5 -f Dockerfile.bullseye -t bullseye-gstreamer .
@@ -36,7 +40,7 @@ docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t bullseye-gstreamer:lates
 gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh264enc ! h264parse ! mp4mux ! filesink location=/data/output.mp4
 ```
 
-## Build log sample
+### Build log sample
 
 The meson configuration output ends by listing the enabled build targets, here is a sample of an output log:
 
