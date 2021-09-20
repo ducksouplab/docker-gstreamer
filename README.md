@@ -20,15 +20,10 @@ curl http://dlib.net/files/dlib-19.22.tar.bz2 --output deps/dlib.tar.bz2
 
 ### Build and run
 
+First of all you may check (in the Dockerfile) that the meson build configuration options fit with your purpose (`-Dbuiltype` for instance).
+
 ```
 docker build --build-arg gstreamer_tag=1.18.5 -f Dockerfile.bullseye -t bullseye-gstreamer .
-```
-
-Tag and push:
-
-```
-docker tag bullseye-gstreamer creamlab/bullseye-gstreamer
-docker push creamlab/bullseye-gstreamer
 ```
 
 Enter the container and try nvcodec:
@@ -40,15 +35,19 @@ docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t bullseye-gstreamer:lates
 gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh264enc ! h264parse ! mp4mux ! filesink location=/data/output.mp4
 ```
 
+Tag and push image if needed (`creamlab/bullseye-gstreamer` as an example):
+
+```
+docker tag bullseye-gstreamer creamlab/bullseye-gstreamer
+docker push creamlab/bullseye-gstreamer
+```
+
 ### Build log sample
 
 The meson configuration output ends by listing the enabled build targets, here is a sample of an output log:
 
 ```
-Message: Building subprojects: gstreamer, gst-plugins-base, gst-plugins-good, libnice, gst-plugins-bad, gst-plugins-ugly, gst-libav, gst-rtsp-server, gst-devtools, gst-integration-testsuites, gst-editing-services, pygobject, gst-python, gst-examples
-Program gst-env.py found: YES (/gstreamer/src/gst-env.py)
-Program git-update found: YES (/gstreamer/src/git-update)
-Build targets in project: 792
+Build targets in project: 581
 
 gst-plugins-bad 1.18.5
 
@@ -85,7 +84,7 @@ gst-plugins-good 1.18.5
              matroska, monoscope, multifile, multipart, replaygain, rtp,
              rtpmanager, rtsp, shapewipe, smpte, spectrum, udp, videobox,
              videocrop, videofilter, videomixer, wavenc, wavparse, y4menc,
-             ossaudio, oss4, video4linux2, flac, jpeg, png, soup
+             ossaudio, oss4, video4linux2, flac, jpeg, png, soup, vpx
 
 gst-plugins-ugly 1.18.5
 
@@ -103,7 +102,7 @@ json-glib 1.6.7
     libdir       : /gstreamer/install/lib/x86_64-linux-gnu
     datadir      : /gstreamer/install/share
 
-  Build
+Build
     Introspection: YES
     Documentation: NO
     Manual pages : NO
@@ -122,22 +121,21 @@ orc 0.4.32
   Build options
     Tools           : YES
     Tests           : NO
-    Examples        : YES
+    Examples        : NO
     Benchmarks      : YES
     Documentation   : NO  disabled
     Orc-test library: YES
 
 All GStreamer modules 1.18.5
 
-  Subprojects
+Subprojects
     FFmpeg                    : YES 12 warnings
     avtp                      : YES
     dssim                     : YES
     gl-headers                : YES
-    gobject-introspection     : YES 3 warnings
     gst-devtools              : YES
     gst-editing-services      : YES
-    gst-examples              : YES
+    gst-examples              : YES 1 warnings
     gst-integration-testsuites: YES
     gst-libav                 : YES
     gst-omx                   : NO Feature 'omx' disabled
@@ -146,14 +144,14 @@ All GStreamer modules 1.18.5
     gst-plugins-good          : YES 2 warnings
     gst-plugins-rs            : NO Feature 'rs' disabled
     gst-plugins-ugly          : YES 3 warnings
-    gst-python                : YES
+    gst-python                : NO Feature 'python' disabled
     gst-rtsp-server           : YES
     gstreamer                 : YES 3 warnings
     gstreamer-sharp           : NO Feature 'sharp' disabled
     gstreamer-vaapi           : NO Feature 'vaapi' disabled
     json-glib                 : YES 1 warnings
     libdrm                    : NO
-                                Dependency "pciaccess" not found, tried pkgconfig
+                                Dependency "pciaccess" not found, tried pkgconfig and cmake
     libmicrodns               : YES
     libnice                   : YES
     libopenjp2                : NO
@@ -163,12 +161,9 @@ All GStreamer modules 1.18.5
     libxml2                   : YES
     openh264                  : NO Program 'nasm nasm.exe' not found
     orc                       : YES 3 warnings
-    pycairo                   : NO
-                                Dependency "cairo" not found, tried pkgconfig
-    pygobject                 : YES 1 warnings
+    pygobject                 : NO Feature 'python' disabled
     sqlite                    : YES
     tinyalsa                  : NO
                                 Neither a subproject directory nor a tinyalsa.wrap file was found.
-    x264                      : YES
-
+    x264                      : YES 1 warnings
 ```
