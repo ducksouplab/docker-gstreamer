@@ -26,7 +26,7 @@ First of all you may check (in the Dockerfile) that the meson build configuratio
 docker build --build-arg gstreamer_tag=1.18.5 -f Dockerfile.bullseye -t bullseye-gstreamer .
 ```
 
-Create a volume (mounted in `docker run`), run an enter container, then try nvcodec:
+Create a folder (mounted as a volume in `docker run`), run and enter container, then try nvcodec:
 
 ```
 mkdir -p data
