@@ -26,7 +26,7 @@ First of all you may check (in the Dockerfile) that the meson build configuratio
 docker build --build-arg gstreamer_tag=1.18.5 -f Dockerfile.bullseye -t bullseye-gstreamer .
 ```
 
-Enter the container and try nvcodec:
+Create a volume (mounted in `docker run`), run an enter container, then try nvcodec:
 
 ```
 mkdir -p data
@@ -35,7 +35,7 @@ docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t bullseye-gstreamer:lates
 gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh264enc ! h264parse ! mp4mux ! filesink location=/data/output.mp4
 ```
 
-Tag and push image if needed (`creamlab/bullseye-gstreamer` as an example):
+Tag and push image if wanted (`creamlab/bullseye-gstreamer` as an example):
 
 ```
 docker tag bullseye-gstreamer creamlab/bullseye-gstreamer
