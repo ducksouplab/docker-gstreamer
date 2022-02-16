@@ -1,45 +1,77 @@
 # Debian-based Docker image for GStreamer
 
-Rely on [gst-build](https://gitlab.freedesktop.org/gstreamer/gst-build) to create a Debian bullseye based Docker image with GStreamer, nvidia nvcodec plugin, gstopencv and dlib.
+Rely on GStreamer [monorepo](https://gitlab.freedesktop.org/gstreamer/gstreamer) to create a Debian bullseye based Docker image with GStreamer, nvidia nvcodec plugin, gstopencv and dlib.
 
 Motivations:
 * `nvcodec` plugin is not installed (on Debian) with `apt-get install gstreamer1.0-plugins-bad`
 * possibility to choose GStreamer version
-* includes opencv and dlib
+* includes opencv and dlib desired versions
 
-The resulting image is published on Docker Hub: https://hub.docker.com/repository/docker/creamlab/bullseye-gstreamer
+The resulting image is published on Docker Hub: https://hub.docker.com/repository/docker/creamlab/debian-gstreamer
 
 ### Preparation
+
+Download version
+
+```
+mkdir -p deps
+cd deps
+git clone https://gitlab.freedesktop.org/gstreamer/gstreamer.git
+```
+
+Download opencv and opencv_contrib src:
+```
+curl https://github.com/opencv/opencv/archive/refs/tags/4.5.5.zip -L --output deps/opencv.zip
+curl https://github.com/opencv/opencv_contrib/archive/refs/tags/4.5.5.zip -L --output deps/opencv_contrib.zip
+```
 
 Download dlib src:
 
 ```
-mkdir -p deps
+# cd to project root
 curl http://dlib.net/files/dlib-19.22.tar.bz2 --output deps/dlib.tar.bz2
 ```
 
 ### Build and run
 
-First of all you may check (in the Dockerfile) that the meson build configuration options fit with your purpose (`-Dbuiltype` for instance).
+First of all you may check (in the Dockerfile) that the meson build configuration options fit with your purpose (`-Dbuiltype` for instance). Available options are listed by `meson configure` (within a container)
 
 ```
-docker build --build-arg gstreamer_tag=1.18.5 -f Dockerfile.bullseye -t bullseye-gstreamer .
+cd deps/gstreamer
+git checkout 1.20.0
+cd ../..
+docker build -f Dockerfile.multi -t debian-gstreamer:bullseye-gst1.20.0 .
+docker run --rm -i -t debian-gstreamer:bullseye-gst1.20.0 bash
+# with GPU
+docker run --gpus all --rm -i -t debian-gstreamer:bullseye-gst1.20.0 bash
 ```
 
 Create a folder (mounted as a volume in `docker run`), run and enter container, then try nvcodec:
 
 ```
 mkdir -p data
-docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t bullseye-gstreamer:latest bash
+docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:bullseye-gst1.20.0 bash
 # now in container
 gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh264enc ! h264parse ! mp4mux ! filesink location=/data/output.mp4
 ```
 
-Tag and push image if wanted (`creamlab/bullseye-gstreamer` as an example):
+Tag and push image if wanted (`creamlab/debian-gstreamer` as an example):
 
 ```
-docker tag bullseye-gstreamer creamlab/bullseye-gstreamer
-docker push creamlab/bullseye-gstreamer
+docker tag debian-gstreamer:bullseye-gst1.20.0 creamlab/debian-gstreamer:bullseye-gst1.20.0
+docker push creamlab/debian-gstreamer:bullseye-gst1.20.0
+```
+
+### Debian bookworm script
+
+```
+cd deps/gstreamer
+git checkout 1.20.0
+cd ../..
+docker build -f Dockerfile.bookworm -t debian-gstreamer:bookworm-gst1.20.0 .
+docker run --rm -i -t debian-gstreamer:bookworm-gst1.20.0 bash
+# with GPU
+docker run --gpus all --rm -i -t debian-gstreamer:bookworm-gst1.20.0 bash
 ```
 
 ### Build log sample
@@ -166,4 +198,14 @@ Subprojects
     tinyalsa                  : NO
                                 Neither a subproject directory nor a tinyalsa.wrap file was found.
     x264                      : YES 1 warnings
+```
+
+# Old: gst-build
+
+Previously the image was built with [gst-build](https://gitlab.freedesktop.org/gstreamer/gst-build), and its source was downloaded during the build (as opposed to put in `deps` prior to the build).
+
+Building the image was done with:
+```
+docker build --build-arg gstreamer_tag=1.18.6 -f Dockerfile.bullseye.old -t debian-gstreamer:bullseye-gst1.18.6 .
+docker run --gpus all --rm -i -t debian-gstreamer:bullseye-gst1.18.6
 ```
