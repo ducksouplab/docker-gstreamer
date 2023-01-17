@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y libva-dev
 
 # build opencv https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html
 WORKDIR /opencv/src
+ENV OPENCV_VERSION=4.7.0
 
 COPY deps/opencv.zip deps/opencv_contrib.zip ./
 RUN unzip opencv.zip
@@ -28,7 +29,7 @@ RUN unzip opencv_contrib.zip
 RUN mkdir -p build
 
 WORKDIR /opencv/src/build
-RUN cmake -DOPENCV_GENERATE_PKGCONFIG=ON -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib-4.5.5/modules/ ../opencv-4.5.5/
+RUN cmake -DOPENCV_GENERATE_PKGCONFIG=ON -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib-$OPENCV_VERSION/modules/ ../opencv-$OPENCV_VERSION/
 RUN cmake --build .
 RUN make install
 

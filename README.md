@@ -21,15 +21,17 @@ git clone https://gitlab.freedesktop.org/gstreamer/gstreamer.git
 
 Download opencv and opencv_contrib src:
 ```
-curl https://github.com/opencv/opencv/archive/refs/tags/4.5.5.zip -L --output deps/opencv.zip
-curl https://github.com/opencv/opencv_contrib/archive/refs/tags/4.5.5.zip -L --output deps/opencv_contrib.zip
+curl https://github.com/opencv/opencv/archive/refs/tags/4.7.0.zip -L --output deps/opencv.zip
+curl https://github.com/opencv/opencv_contrib/archive/refs/tags/4.7.0.zip -L --output deps/opencv_contrib.zip
 ```
+
+Then edit Dockerfile.multi's `OPENCV_VERSION` env to the chosen version, `4.7.0` in the above example.
 
 Download dlib src:
 
 ```
 # cd to project root
-curl http://dlib.net/files/dlib-19.22.tar.bz2 --output deps/dlib.tar.bz2
+curl http://dlib.net/files/dlib-19.24.tar.bz2 --output deps/dlib.tar.bz2
 ```
 
 ### Build and run
@@ -38,19 +40,19 @@ First of all you may check (in the Dockerfile) that the meson build configuratio
 
 ```
 cd deps/gstreamer
-git checkout 1.20.0
+git checkout 1.20.5
 cd ../..
-docker build -f Dockerfile.multi -t debian-gstreamer:bullseye-gst1.20.0 .
-docker run --rm -i -t debian-gstreamer:bullseye-gst1.20.0 bash
+docker build -f Dockerfile.multi -t debian-gstreamer:latest .
+docker run --rm -i -t debian-gstreamer:latest bash
 # with GPU
-docker run --gpus all --rm -i -t debian-gstreamer:bullseye-gst1.20.0 bash
+docker run --gpus all --rm -i -t debian-gstreamer:latest bash
 ```
 
 Create a folder (mounted as a volume in `docker run`), run and enter container, then try nvcodec:
 
 ```
 mkdir -p data
-docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:bullseye-gst1.20.0 bash
+docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:latest bash
 # now in container
 gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh264enc ! h264parse ! mp4mux ! filesink location=/data/output.mp4
 ```
@@ -58,20 +60,8 @@ gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh
 Tag and push image if wanted (`creamlab/debian-gstreamer` as an example):
 
 ```
-docker tag debian-gstreamer:bullseye-gst1.20.0 creamlab/debian-gstreamer:bullseye-gst1.20.0
-docker push creamlab/debian-gstreamer:bullseye-gst1.20.0
-```
-
-### Debian bookworm script
-
-```
-cd deps/gstreamer
-git checkout 1.20.0
-cd ../..
-docker build -f Dockerfile.bookworm -t debian-gstreamer:bookworm-gst1.20.0 .
-docker run --rm -i -t debian-gstreamer:bookworm-gst1.20.0 bash
-# with GPU
-docker run --gpus all --rm -i -t debian-gstreamer:bookworm-gst1.20.0 bash
+docker tag debian-gstreamer:latest ducksouplab/debian-gstreamer:latest
+docker push ducksouplab/debian-gstreamer:latest
 ```
 
 ### Build log sample
