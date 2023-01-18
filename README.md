@@ -7,7 +7,7 @@ Motivations:
 * possibility to choose GStreamer version
 * includes opencv and dlib desired versions
 
-The resulting image is published on Docker Hub: https://hub.docker.com/repository/docker/creamlab/debian-gstreamer
+The resulting image is published on Docker Hub: https://hub.docker.com/repository/docker/ducksouplab/debian-gstreamer
 
 ### Preparation
 
@@ -57,7 +57,7 @@ docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:latest 
 gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh264enc ! h264parse ! mp4mux ! filesink location=/data/output.mp4
 ```
 
-Tag and push image if wanted (`creamlab/debian-gstreamer` as an example):
+Tag and push image if wanted (`ducksouplab/debian-gstreamer` as an example):
 
 ```
 docker tag debian-gstreamer:latest ducksouplab/debian-gstreamer:latest
