@@ -98,6 +98,16 @@ RUN apt-get update && apt-get install -y libpython3.9
 # for CGO
 RUN apt-get update && apt-get install -y libunwind-dev libdw-dev
 
+# NOT WORKING
+# WORKDIR /cudainstall
+# COPY deps/cuda-repo-debian11-11-7-local_11.7.0-515.43.04-1_amd64.deb .
+# RUN dpkg -i cuda-repo-debian11-11-7-local_11.7.0-515.43.04-1_amd64.deb
+# RUN cp /var/cuda-repo-debian11-11-7-local/cuda-*-keyring.gpg /usr/share/keyrings/
+# RUN apt-get update && apt-get install -y software-properties-common
+# RUN add-apt-repository contrib
+# RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y keyboard-configuration
+# RUN apt-get update && apt-get install -y cuda
+
 # plugin dependencies: pango
 # RUN apt-get update && apt-get install -y libpango1.0-dev libpangocairo-1.0-0 libcairo2-dev
 

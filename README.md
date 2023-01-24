@@ -48,7 +48,13 @@ docker run --rm -i -t debian-gstreamer:latest bash
 docker run --gpus all --rm -i -t debian-gstreamer:latest bash
 ```
 
-Create a folder (mounted as a volume in `docker run`), run and enter container, then try nvcodec:
+To build with image layers cache and save the output of the build you may alternatively run:
+
+```
+docker build --no-cache -f Dockerfile.multi -t debian-gstreamer:latest . 2>&1 | tee build.log
+```
+
+Create a data folder (mounted as a volume in `docker run`) with an input.mkv file , run and enter container, then try nvcodec:
 
 ```
 mkdir -p data
@@ -69,35 +75,51 @@ docker push ducksouplab/debian-gstreamer:latest
 The meson configuration output ends by listing the enabled build targets, here is a sample of an output log:
 
 ```
-Build targets in project: 581
+Build targets in project: 493
 
-gst-plugins-bad 1.18.5
+libdv 1.0.0
 
-    Plugins: accurip, adpcmdec, adpcmenc, aiff, asfmux, audiobuffersplit,
-             audiofxbad, audiomixmatrix, audiolatency, audiovisualizers,
-             autoconvert, bayer, camerabin, coloreffects, debugutilsbad,
-             dvbsubenc, dvbsuboverlay, dvdspu, faceoverlay, festival,
-             fieldanalysis, freeverb, frei0r, gaudieffects, gdp,
-             geometrictransform, id3tag, inter, interlace, ivfparse, ivtc,
-             jp2kdecimator, jpegformat, rfbsrc, midi, mpegpsdemux, mpegpsmux,
-             mpegtsdemux, mpegtsmux, mxf, netsim, rtponvif, pcapparse, pnm,
-             proxy, legacyrawparse, removesilence, rist, rtmp2, rtpmanagerbad,
-             sdpelem, segmentclip, siren, smooth, speed, subenc, switchbin,
-             timecode, transcode, videofiltersbad, videoframe_audiolevel,
-             videoparsersbad, videosignal, vmnc, y4mdec, decklink, dvb,
-             fbdevsink, ipcpipeline, nvcodec, shm, avtp, dash, dc1394, dtls,
-             hls, iqa, microdns, opencv, openexr, opusparse, sctp,
-             smoothstreaming, sndfile, soundtouch, webrtc
+    YUV format            : YUY2
+    assembly optimizations: YES
 
-gst-plugins-base 1.18.5
+gst-editing-services 1.22.0
+
+    Plugins: nle, ges
+
+gst-plugins-bad 1.22.0
+
+    Plugins               : accurip, adpcmdec, adpcmenc, aiff, asfmux,
+                            audiobuffersplit, audiofxbad, audiomixmatrix,
+                            audiolatency, audiovisualizers, autoconvert, bayer,
+                            camerabin, codecalpha, codectimestamper,
+                            coloreffects, debugutilsbad, dvbsubenc,
+                            dvbsuboverlay, dvdspu, faceoverlay, festival,
+                            fieldanalysis, freeverb, frei0r, gaudieffects, gdp,
+                            geometrictransform, id3tag, inter, interlace,
+                            ivfparse, ivtc, jp2kdecimator, jpegformat, rfbsrc,
+                            midi, mpegpsdemux, mpegpsmux, mpegtsdemux,
+                            mpegtsmux, mxf, netsim, rtponvif, pcapparse, pnm,
+                            proxy, legacyrawparse, removesilence, rist, rtmp2,
+                            rtpmanagerbad, sdpelem, segmentclip, siren, smooth,
+                            speed, subenc, switchbin, timecode, transcode,
+                            videofiltersbad, videoframe_audiolevel,
+                            videoparsersbad, videosignal, vmnc, y4mdec,
+                            decklink, dvb, fbdevsink, ipcpipeline, nvcodec,
+                            qsv, shm, va, aes, avtp, closedcaption, dash, dtls,
+                            fdkaac, hls, iqa, microdns, opencv, opusparse,
+                            sctp, smoothstreaming, sndfile, soundtouch,
+                            ttmlsubs, webrtc
+    (A)GPL license allowed: True
+
+gst-plugins-base 1.22.0
 
     Plugins: adder, app, audioconvert, audiomixer, audiorate, audioresample,
              audiotestsrc, compositor, encoding, gio, overlaycomposition,
              pbtypes, playback, rawparse, subparse, tcp, typefindfunctions,
-             videoconvert, videorate, videoscale, videotestsrc, volume, ogg,
-             opus, vorbis
+             videoconvertscale, videorate, videotestsrc, volume, ogg, opus,
+             pango, vorbis, ximagesink
 
-gst-plugins-good 1.18.5
+gst-plugins-good 1.22.0
 
     Plugins: alpha, alphacolor, apetag, audiofx, audioparsers, auparse,
              autodetect, avi, cutter, navigationtest, debug, deinterlace, dtmf,
@@ -105,18 +127,28 @@ gst-plugins-good 1.18.5
              id3demux, imagefreeze, interleave, isomp4, alaw, mulaw, level,
              matroska, monoscope, multifile, multipart, replaygain, rtp,
              rtpmanager, rtsp, shapewipe, smpte, spectrum, udp, videobox,
-             videocrop, videofilter, videomixer, wavenc, wavparse, y4menc,
-             ossaudio, oss4, video4linux2, flac, jpeg, png, soup, vpx
+             videocrop, videofilter, videomixer, wavenc, wavparse, xingmux,
+             y4menc, ossaudio, oss4, video4linux2, ximagesrc, adaptivedemux2,
+             cairo, flac, jpeg, lame, dv, png, soup, vpx
 
-gst-plugins-ugly 1.18.5
+gst-plugins-ugly 1.22.0
 
-    Plugins: asf, dvdlpcmdec, dvdsub, realmedia, xingmux, x264
+    Plugins               : asf, dvdlpcmdec, dvdsub, realmedia, x264
+    (A)GPL license allowed: True
 
-gstreamer 1.18.5
+gst-rtsp-server 1.22.0
+
+    Plugins: rtspclientsink
+
+gstreamer 1.22.0
 
     Plugins: coreelements, coretracers
 
-json-glib 1.6.7
+gstreamer-vaapi 1.22.0
+
+    Plugins: vaapi
+
+json-glib 1.6.6
 
   Directories
     prefix       : /gstreamer/install
@@ -124,78 +156,78 @@ json-glib 1.6.7
     libdir       : /gstreamer/install/lib/x86_64-linux-gnu
     datadir      : /gstreamer/install/share
 
-Build
+  Build
     Introspection: YES
     Documentation: NO
     Manual pages : NO
     Tests        : YES
 
-orc 0.4.32
-
-  Backends
-    SSE             : YES
-    MMX             : YES
-    NEON            : YES
-    MIPS            : YES
-    c64x            : YES
-    Altivec         : YES
+gstreamer-full 1.22.0
 
   Build options
-    Tools           : YES
-    Tests           : NO
-    Examples        : NO
-    Benchmarks      : YES
-    Documentation   : NO  disabled
-    Orc-test library: YES
+    gstreamer-full library    : NO
+    Tools                     : gst-inspect, gst-stats, gst-typefind,
+                                gst-launch, gst-device-monitor, gst-discoverer,
+                                gst-play, ges-launch
 
-All GStreamer modules 1.18.5
-
-Subprojects
-    FFmpeg                    : YES 12 warnings
+  Subprojects
+    FFmpeg                    : YES
     avtp                      : YES
     dssim                     : YES
+    dv                        : YES
+    fdk-aac                   : YES
     gl-headers                : YES
-    gst-devtools              : YES
+    gst-devtools              : NO Feature 'devtools' disabled
     gst-editing-services      : YES
-    gst-examples              : YES 1 warnings
-    gst-integration-testsuites: YES
+    gst-examples              : YES 3 warnings
+    gst-integration-testsuites: NO Feature 'devtools' disabled
     gst-libav                 : YES
     gst-omx                   : NO Feature 'omx' disabled
     gst-plugins-bad           : YES 1 warnings
-    gst-plugins-base          : YES 2 warnings
-    gst-plugins-good          : YES 2 warnings
+    gst-plugins-base          : YES 1 warnings
+    gst-plugins-good          : YES 1 warnings
     gst-plugins-rs            : NO Feature 'rs' disabled
-    gst-plugins-ugly          : YES 3 warnings
-    gst-python                : NO Feature 'python' disabled
+    gst-plugins-ugly          : YES
+    gst-python                : NO
+                                Subproject "subprojects/pygobject" required but not found.
     gst-rtsp-server           : YES
-    gstreamer                 : YES 3 warnings
+    gstreamer                 : YES 1 warnings
     gstreamer-sharp           : NO Feature 'sharp' disabled
-    gstreamer-vaapi           : NO Feature 'vaapi' disabled
+    gstreamer-vaapi           : YES
     json-glib                 : YES 1 warnings
+    lame                      : YES 1 warnings
     libdrm                    : NO
                                 Dependency "pciaccess" not found, tried pkgconfig and cmake
+    libjpeg-turbo             : YES
     libmicrodns               : YES
     libnice                   : YES
     libopenjp2                : NO
-                                Dependency "wxWidgets" not found, tried config-tool
+                                In subproject libopenjp2: Unknown options: "libopenjp2:build_codec"
     libpsl                    : YES
-    libsoup                   : YES 3 warnings
+    libsoup                   : NO
+                                Assert failed: libsoup requires glib-networking for TLS support
     libxml2                   : YES
-    openh264                  : NO Program 'nasm nasm.exe' not found
-    orc                       : YES 3 warnings
-    pygobject                 : NO Feature 'python' disabled
-    sqlite                    : YES
+    openh264                  : NO Program 'nasm' not found or not executable
+    pygobject                 : NO
+                                Dependency 'glib-2.0' is required but not found.
+    sqlite3                   : YES
     tinyalsa                  : NO
                                 Neither a subproject directory nor a tinyalsa.wrap file was found.
     x264                      : YES 1 warnings
-```
 
-# Old: gst-build
-
-Previously the image was built with [gst-build](https://gitlab.freedesktop.org/gstreamer/gst-build), and its source was downloaded during the build (as opposed to put in `deps` prior to the build).
-
-Building the image was done with:
-```
-docker build --build-arg gstreamer_tag=1.18.6 -f Dockerfile.bullseye.old -t debian-gstreamer:bullseye-gst1.18.6 .
-docker run --gpus all --rm -i -t debian-gstreamer:bullseye-gst1.18.6
+  User defined options
+    buildtype                 : release
+    prefix                    : /gstreamer/install
+    devtools                  : disabled
+    doc                       : disabled
+    examples                  : disabled
+    gpl                       : enabled
+    libav                     : enabled
+    orc                       : disabled
+    rs                        : disabled
+    tests                     : disabled
+    vaapi                     : enabled
+    gst-plugins-base:pango    : enabled
+    gst-plugins-ugly:x264     : enabled
+    libsoup:sysprof           : disabled
 ```
