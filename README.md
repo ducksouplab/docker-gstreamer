@@ -1,23 +1,46 @@
 # Debian-based Docker image for GStreamer
 
-Rely on GStreamer [monorepo](https://gitlab.freedesktop.org/gstreamer/gstreamer) to create a Debian bullseye based Docker image with GStreamer, nvidia nvcodec plugin, gstopencv and dlib.
+Currently this project builds a Debian 11 image with:
+
+- GStreamer 1.22.0
+- opencv and opencv_contrib 4.7.0
+- dlib 19.24
+- libnvrtc (from CUDA) 11.7
+
+It's available here: https://hub.docker.com/r/ducksouplab/debian-gstreamer
+
+It relies on GStreamer [monorepo](https://gitlab.freedesktop.org/gstreamer/gstreamer) to build GStreamer and its plugin (in particular enabling `nvcodec`).
 
 Motivations:
 * `nvcodec` plugin is not installed (on Debian) with `apt-get install gstreamer1.0-plugins-bad`
-* possibility to choose GStreamer version
-* includes opencv and dlib desired versions
+* possibility to choose GStreamer (latest) version
+* includes opencv and dlib
 
 The resulting image is published on Docker Hub: https://hub.docker.com/repository/docker/ducksouplab/debian-gstreamer
 
-### Preparation
+### Preparation: download dependencies
 
-Download version
+Prepare `deps` folder to store source and binaries that will be used by the Dockerfile:
 
 ```
 mkdir -p deps
 cd deps
-git clone https://gitlab.freedesktop.org/gstreamer/gstreamer.git
 ```
+
+You will have to edit Dockerfile.debian if you select different versions of opencv, dlib or nvrtc.
+
+#### GStreamer
+
+Download source and choose version:
+
+```
+git clone https://gitlab.freedesktop.org/gstreamer/gstreamer.git
+cd gstreamer
+git checkout 1.22.0
+cd ..
+```
+
+#### opencv
 
 Download opencv and opencv_contrib src:
 ```
@@ -25,7 +48,9 @@ curl https://github.com/opencv/opencv/archive/refs/tags/4.7.0.zip -L --output de
 curl https://github.com/opencv/opencv_contrib/archive/refs/tags/4.7.0.zip -L --output deps/opencv_contrib.zip
 ```
 
-Then edit Dockerfile.multi's `OPENCV_VERSION` env to the chosen version, `4.7.0` in the above example.
+Then edit Dockerfiles `OPENCV_VERSION` env to the chosen version, `4.7.0` in the above example.
+
+#### dlib
 
 Download dlib src:
 
@@ -34,24 +59,40 @@ Download dlib src:
 curl http://dlib.net/files/dlib-19.24.tar.bz2 --output deps/dlib.tar.bz2
 ```
 
-### Build and run
+#### nvrtc
 
-First of all you may check (in the Dockerfile) that the meson build configuration options fit with your purpose (`-Dbuiltype` for instance). Available options are listed by `meson configure` (within a container)
+libnvrtc.so is needed to enable *cudaconvert* and *cudascale* plugins. You may check available versions here: https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/
+
+In the following example we picked CUDA 11.7 that is compatible with the driver 515 of our GPU.
 
 ```
-cd deps/gstreamer
-git checkout 1.20.5
-cd ../..
-docker build -f Dockerfile.multi -t debian-gstreamer:latest .
-docker run --rm -i -t debian-gstreamer:latest bash
+wget https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/cuda-nvrtc-dev-11-7_11.7.50-1_amd64.deb
+wget https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/cuda-nvrtc-11-7_11.7.50-1_amd64.deb
+```
+
+Alternatives to this handpicked nvrtc package installation are:
+
+- install the whole CUDA toolkit (https://developer.nvidia.com/cuda-downloads for CUDA 12 or https://developer.nvidia.com/cuda-11-7-0-download-archive for CUDA 11.7)
+
+- start from an nvidia/cuda devel image (rather than a bare debian one), for instance nvidia/cuda:11.7.0-devel-ubuntu22.04 (`Dockerfile.ubuntu.cuda` is provided as an example)
+
+
+### Build and run
+
+First of all you may check (in the Dockerfile) that the meson build configuration options fit with your purpose (`-Dbuiltype` for instance). Available options are listed by `meson configure` (within a container). Build and run:
+
+```
+# from the root project folder
+docker build -f Dockerfile.debian -t debian-gstreamer:debian11-gstreamer1.22.0 .
+docker run --rm -i -t debian-gstreamer:debian11-gstreamer1.22.0 bash
 # with GPU
-docker run --gpus all --rm -i -t debian-gstreamer:latest bash
+docker run --gpus all --rm -i -t debian-gstreamer:debian11-gstreamer1.22.0 bash
 ```
 
 To build with image layers cache and save the output of the build you may alternatively run:
 
 ```
-docker build --no-cache -f Dockerfile.multi -t debian-gstreamer:latest . 2>&1 | tee build.log
+docker build --no-cache -f Dockerfile.debian -t debian-gstreamer:debian11-gstreamer1.22.0 . 2>&1 | tee build.log
 ```
 
 Create a data folder (mounted as a volume in `docker run`) with an input.mkv file , run and enter container, then try nvcodec:
@@ -63,11 +104,13 @@ docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:latest 
 gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh264enc ! h264parse ! mp4mux ! filesink location=/data/output.mp4
 ```
 
+### Share image
+
 Tag and push image if wanted (`ducksouplab/debian-gstreamer` as an example):
 
 ```
-docker tag debian-gstreamer:latest ducksouplab/debian-gstreamer:latest
-docker push ducksouplab/debian-gstreamer:latest
+docker tag debian-gstreamer:debian11-gstreamer1.22.0 ducksouplab/debian-gstreamer:debian11-gstreamer1.22.0
+docker push ducksouplab/debian-gstreamer:debian11-gstreamer1.22.0
 ```
 
 ### Build log sample

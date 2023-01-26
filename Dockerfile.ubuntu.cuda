@@ -1,4 +1,4 @@
-FROM debian:bullseye AS opencv-builder
+FROM nvidia/cuda:11.7.0-devel-ubuntu22.04 AS opencv-builder
 
 RUN apt-get upgrade -y
 RUN apt-get update && apt-get install -y cmake g++ unzip
@@ -84,6 +84,7 @@ RUN apt-get update
 RUN apt-get update && apt-get install -y zlib1g-dev libglib2.0-dev libffi-dev libssl-dev
 
 # plugins dependencies: soundtouch, opencv, nvcodec, vaapi
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
 RUN apt-get update && apt-get install -y libsndfile1 libsoundtouch1 libopencv-dev libegl1 libgles-dev
 
 # dlib additionals
@@ -93,20 +94,10 @@ RUN apt-get update && apt-get install -y libopenblas-base \
     libdlib-data
 
 # for plugin scanner
-RUN apt-get update && apt-get install -y libpython3.9
+RUN apt-get update && apt-get install -y libpython3.11
 
 # for CGO
 RUN apt-get update && apt-get install -y libunwind-dev libdw-dev
-
-# NOT WORKING
-# WORKDIR /cudainstall
-# COPY deps/cuda-repo-debian11-11-7-local_11.7.0-515.43.04-1_amd64.deb .
-# RUN dpkg -i cuda-repo-debian11-11-7-local_11.7.0-515.43.04-1_amd64.deb
-# RUN cp /var/cuda-repo-debian11-11-7-local/cuda-*-keyring.gpg /usr/share/keyrings/
-# RUN apt-get update && apt-get install -y software-properties-common
-# RUN add-apt-repository contrib
-# RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y keyboard-configuration
-# RUN apt-get update && apt-get install -y cuda
 
 # plugin dependencies: pango
 # RUN apt-get update && apt-get install -y libpango1.0-dev libpangocairo-1.0-0 libcairo2-dev
