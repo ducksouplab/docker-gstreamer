@@ -9,14 +9,12 @@ Currently this project builds a Debian 11 image with:
 
 It's available here: https://hub.docker.com/r/ducksouplab/debian-gstreamer
 
-It relies on GStreamer [monorepo](https://gitlab.freedesktop.org/gstreamer/gstreamer) to build GStreamer and its plugin (in particular enabling `nvcodec`).
+It relies on GStreamer [monorepo](https://gitlab.freedesktop.org/gstreamer/gstreamer) to build GStreamer and its plugins (in particular enabling `nvcodec`).
 
 Motivations:
-* `nvcodec` plugin is not installed (on Debian) with `apt-get install gstreamer1.0-plugins-bad`
 * possibility to choose GStreamer (latest) version
+* `nvcodec` plugin is not installed (on Debian) with `apt-get install gstreamer1.0-plugins-bad`
 * includes opencv and dlib
-
-The resulting image is published on Docker Hub: https://hub.docker.com/repository/docker/ducksouplab/debian-gstreamer
 
 ### Preparation: download dependencies
 
@@ -61,7 +59,7 @@ curl http://dlib.net/files/dlib-19.24.tar.bz2 --output deps/dlib.tar.bz2
 
 #### nvrtc
 
-libnvrtc.so is needed to enable *cudaconvert* and *cudascale* plugins. You may check available versions here: https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/
+libnvrtc.so is needed to enable `cudaconvert`, `cudascale `and `cudaconvertscale` GStreamer plugins.
 
 In the following example we picked CUDA 11.7 that is compatible with the driver 515 of our GPU.
 
@@ -69,6 +67,8 @@ In the following example we picked CUDA 11.7 that is compatible with the driver 
 wget https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/cuda-nvrtc-dev-11-7_11.7.50-1_amd64.deb
 wget https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/cuda-nvrtc-11-7_11.7.50-1_amd64.deb
 ```
+
+You may pick another, looking at: https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/
 
 Alternatives to this handpicked nvrtc package installation are:
 
@@ -113,7 +113,7 @@ docker tag debian-gstreamer:debian11-gstreamer1.22.0 ducksouplab/debian-gstreame
 docker push ducksouplab/debian-gstreamer:debian11-gstreamer1.22.0
 ```
 
-### Build log sample
+### Image build log sample
 
 The meson configuration output ends by listing the enabled build targets, here is a sample of an output log:
 
