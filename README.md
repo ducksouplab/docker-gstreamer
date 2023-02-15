@@ -113,6 +113,18 @@ docker tag debian-gstreamer:debian11-gstreamer1.22.0 ducksouplab/debian-gstreame
 docker push ducksouplab/debian-gstreamer:debian11-gstreamer1.22.0
 ```
 
+### Build from CUDA image
+
+```
+docker build -f Dockerfile.ubuntu.cuda -t ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.0 .
+```
+
+Share
+```
+docker tag ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.0 ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.0
+docker push ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.0
+```
+
 ### Image build log sample
 
 The meson configuration output ends by listing the enabled build targets, here is a sample of an output log:

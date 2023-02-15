@@ -70,7 +70,7 @@ RUN cmake -GNinja \
     -DUSE_SSE2_INSTRUCTIONS=ON \
     -DUSE_SSE4_INSTRUCTIONS=ON \
     -DUSE_AVX_INSTRUCTIONS=ON \
-    -DDLIB_USE_CUDA=OFF \
+    -DDLIB_USE_CUDA=ON \
     ".."
 RUN ninja
 RUN ninja install
