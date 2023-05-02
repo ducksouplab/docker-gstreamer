@@ -2,7 +2,7 @@
 
 Currently this project builds a Debian 11 image with:
 
-- GStreamer 1.22.0
+- GStreamer 1.22.2
 - opencv and opencv_contrib 4.7.0
 - dlib 19.24
 - libnvrtc (from CUDA) 11.7
@@ -34,7 +34,8 @@ Download source and choose version:
 ```
 git clone https://gitlab.freedesktop.org/gstreamer/gstreamer.git
 cd gstreamer
-git checkout 1.22.0
+git pull
+git checkout 1.22.2
 cd ..
 ```
 
@@ -83,16 +84,16 @@ First of all you may check (in the Dockerfile) that the meson build configuratio
 
 ```
 # from the root project folder
-docker build -f Dockerfile.debian -t debian-gstreamer:debian11-gstreamer1.22.0 .
-docker run --rm -i -t debian-gstreamer:debian11-gstreamer1.22.0 bash
+docker build --no-cache -f Dockerfile.debian -t debian-gstreamer:debian11-gstreamer1.22.2 . 2>&1 | tee build.log
+docker run --rm -i -t debian-gstreamer:debian11-gstreamer1.22.2 bash
 # with GPU
-docker run --gpus all --rm -i -t debian-gstreamer:debian11-gstreamer1.22.0 bash
+docker run --gpus all --rm -i -t debian-gstreamer:debian11-gstreamer1.22.2 bash
 ```
 
 To build with image layers cache and save the output of the build you may alternatively run:
 
 ```
-docker build --no-cache -f Dockerfile.debian -t debian-gstreamer:debian11-gstreamer1.22.0 . 2>&1 | tee build.log
+docker build -f Dockerfile.debian -t debian-gstreamer:debian11-gstreamer1.22.2 . 2>&1 | tee build.log
 ```
 
 Create a data folder (mounted as a volume in `docker run`) with an input.mkv file , run and enter container, then try nvcodec:
@@ -109,20 +110,20 @@ gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh
 Tag and push image if wanted (`ducksouplab/debian-gstreamer` as an example):
 
 ```
-docker tag debian-gstreamer:debian11-gstreamer1.22.0 ducksouplab/debian-gstreamer:debian11-gstreamer1.22.0
-docker push ducksouplab/debian-gstreamer:debian11-gstreamer1.22.0
+docker tag debian-gstreamer:debian11-gstreamer1.22.2 ducksouplab/debian-gstreamer:debian11-gstreamer1.22.2
+docker push ducksouplab/debian-gstreamer:debian11-gstreamer1.22.2
 ```
 
 ### Build from CUDA image
 
 ```
-docker build -f Dockerfile.ubuntu.cuda -t ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.0 .
+docker build -f Dockerfile.ubuntu.cuda -t ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.2 .
 ```
 
 Share
 ```
-docker tag ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.0 ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.0
-docker push ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.0
+docker tag ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.2 ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.2
+docker push ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.2
 ```
 
 ### Image build log sample
@@ -131,85 +132,85 @@ The meson configuration output ends by listing the enabled build targets, here i
 
 ```
 Build targets in project: 493
-
-libdv 1.0.0
-
-    YUV format            : YUY2
-    assembly optimizations: YES
-
-gst-editing-services 1.22.0
-
-    Plugins: nle, ges
-
-gst-plugins-bad 1.22.0
-
-    Plugins               : accurip, adpcmdec, adpcmenc, aiff, asfmux,
-                            audiobuffersplit, audiofxbad, audiomixmatrix,
-                            audiolatency, audiovisualizers, autoconvert, bayer,
-                            camerabin, codecalpha, codectimestamper,
-                            coloreffects, debugutilsbad, dvbsubenc,
-                            dvbsuboverlay, dvdspu, faceoverlay, festival,
-                            fieldanalysis, freeverb, frei0r, gaudieffects, gdp,
-                            geometrictransform, id3tag, inter, interlace,
-                            ivfparse, ivtc, jp2kdecimator, jpegformat, rfbsrc,
-                            midi, mpegpsdemux, mpegpsmux, mpegtsdemux,
-                            mpegtsmux, mxf, netsim, rtponvif, pcapparse, pnm,
-                            proxy, legacyrawparse, removesilence, rist, rtmp2,
-                            rtpmanagerbad, sdpelem, segmentclip, siren, smooth,
-                            speed, subenc, switchbin, timecode, transcode,
-                            videofiltersbad, videoframe_audiolevel,
-                            videoparsersbad, videosignal, vmnc, y4mdec,
-                            decklink, dvb, fbdevsink, ipcpipeline, nvcodec,
-                            qsv, shm, va, aes, avtp, closedcaption, dash, dtls,
-                            fdkaac, hls, iqa, microdns, opencv, opusparse,
-                            sctp, smoothstreaming, sndfile, soundtouch,
-                            ttmlsubs, webrtc
-    (A)GPL license allowed: True
-
-gst-plugins-base 1.22.0
-
-    Plugins: adder, app, audioconvert, audiomixer, audiorate, audioresample,
-             audiotestsrc, compositor, encoding, gio, overlaycomposition,
-             pbtypes, playback, rawparse, subparse, tcp, typefindfunctions,
-             videoconvertscale, videorate, videotestsrc, volume, ogg, opus,
-             pango, vorbis, ximagesink
-
-gst-plugins-good 1.22.0
-
-    Plugins: alpha, alphacolor, apetag, audiofx, audioparsers, auparse,
-             autodetect, avi, cutter, navigationtest, debug, deinterlace, dtmf,
-             effectv, equalizer, flv, flxdec, goom, goom2k1, icydemux,
-             id3demux, imagefreeze, interleave, isomp4, alaw, mulaw, level,
-             matroska, monoscope, multifile, multipart, replaygain, rtp,
-             rtpmanager, rtsp, shapewipe, smpte, spectrum, udp, videobox,
-             videocrop, videofilter, videomixer, wavenc, wavparse, xingmux,
-             y4menc, ossaudio, oss4, video4linux2, ximagesrc, adaptivedemux2,
-             cairo, flac, jpeg, lame, dv, png, soup, vpx
-
-gst-plugins-ugly 1.22.0
-
-    Plugins               : asf, dvdlpcmdec, dvdsub, realmedia, x264
-    (A)GPL license allowed: True
-
-gst-rtsp-server 1.22.0
-
-    Plugins: rtspclientsink
-
-gstreamer 1.22.0
-
-    Plugins: coreelements, coretracers
-
-gstreamer-vaapi 1.22.0
-
-    Plugins: vaapi
-
-json-glib 1.6.6
-
-  Directories
-    prefix       : /gstreamer/install
-    includedir   : /gstreamer/install/include
-    libdir       : /gstreamer/install/lib/x86_64-linux-gnu
-    datadir      : /gstreamer/install/share
+ 
+ libdv 1.0.0
+ 
+     YUV format            : YUY2
+     assembly optimizations: YES
+ 
+ gst-editing-services 1.22.2
+ 
+     Plugins: nle, ges
+ 
+ gst-plugins-bad 1.22.2
+ 
+     Plugins               : accurip, adpcmdec, adpcmenc, aiff, asfmux,
+                             audiobuffersplit, audiofxbad, audiomixmatrix,
+                             audiolatency, audiovisualizers, autoconvert, bayer,
+                             camerabin, codecalpha, codectimestamper,
+                             coloreffects, debugutilsbad, dvbsubenc,
+                             dvbsuboverlay, dvdspu, faceoverlay, festival,
+                             fieldanalysis, freeverb, frei0r, gaudieffects, gdp,
+                             geometrictransform, id3tag, inter, interlace,
+                             ivfparse, ivtc, jp2kdecimator, jpegformat, rfbsrc,
+                             midi, mpegpsdemux, mpegpsmux, mpegtsdemux,
+                             mpegtsmux, mxf, netsim, rtponvif, pcapparse, pnm,
+                             proxy, legacyrawparse, removesilence, rist, rtmp2,
+                             rtpmanagerbad, sdpelem, segmentclip, siren, smooth,
+                             speed, subenc, switchbin, timecode, transcode,
+                             videofiltersbad, videoframe_audiolevel,
+                             videoparsersbad, videosignal, vmnc, y4mdec,
+                             decklink, dvb, fbdevsink, ipcpipeline, nvcodec,
+                             qsv, shm, va, aes, avtp, closedcaption, dash, dtls,
+                             fdkaac, hls, iqa, microdns, opencv, opusparse,
+                             sctp, smoothstreaming, sndfile, soundtouch,
+                             ttmlsubs, webrtc
+     (A)GPL license allowed: True
+ 
+ gst-plugins-base 1.22.2
+ 
+     Plugins: adder, app, audioconvert, audiomixer, audiorate, audioresample,
+              audiotestsrc, compositor, encoding, gio, overlaycomposition,
+              pbtypes, playback, rawparse, subparse, tcp, typefindfunctions,
+              videoconvertscale, videorate, videotestsrc, volume, ogg, opus,
+              pango, vorbis, ximagesink
+ 
+ gst-plugins-good 1.22.2
+ 
+     Plugins: alpha, alphacolor, apetag, audiofx, audioparsers, auparse,
+              autodetect, avi, cutter, navigationtest, debug, deinterlace, dtmf,
+              effectv, equalizer, flv, flxdec, goom, goom2k1, icydemux,
+              id3demux, imagefreeze, interleave, isomp4, alaw, mulaw, level,
+              matroska, monoscope, multifile, multipart, replaygain, rtp,
+              rtpmanager, rtsp, shapewipe, smpte, spectrum, udp, videobox,
+              videocrop, videofilter, videomixer, wavenc, wavparse, xingmux,
+              y4menc, ossaudio, oss4, video4linux2, ximagesrc, adaptivedemux2,
+              cairo, flac, jpeg, lame, dv, png, soup, vpx
+ 
+ gst-plugins-ugly 1.22.2
+ 
+     Plugins               : asf, dvdlpcmdec, dvdsub, realmedia, x264
+     (A)GPL license allowed: True
+ 
+ gst-rtsp-server 1.22.2
+ 
+     Plugins: rtspclientsink
+ 
+ gstreamer 1.22.2
+ 
+     Plugins: coreelements, coretracers
+ 
+ gstreamer-vaapi 1.22.2
+ 
+     Plugins: vaapi
+ 
+ json-glib 1.6.6
+ 
+   Directories
+     prefix       : /gstreamer/install
+     includedir   : /gstreamer/install/include
+     libdir       : /gstreamer/install/lib/x86_64-linux-gnu
+     datadir      : /gstreamer/install/share
 
   Build
     Introspection: YES
@@ -217,7 +218,7 @@ json-glib 1.6.6
     Manual pages : NO
     Tests        : YES
 
-gstreamer-full 1.22.0
+gstreamer-full 1.22.2
 
   Build options
     gstreamer-full library    : NO
@@ -244,7 +245,7 @@ gstreamer-full 1.22.0
     gst-plugins-rs            : NO Feature 'rs' disabled
     gst-plugins-ugly          : YES
     gst-python                : NO
-                                Subproject "subprojects/pygobject" required but not found.
+                                Dependency 'glib-2.0' is required but not found.
     gst-rtsp-server           : YES
     gstreamer                 : YES 1 warnings
     gstreamer-sharp           : NO Feature 'sharp' disabled
@@ -261,10 +262,8 @@ gstreamer-full 1.22.0
     libpsl                    : YES
     libsoup                   : NO
                                 Assert failed: libsoup requires glib-networking for TLS support
-    libxml2                   : YES
+    libxml2                   : YES 2 warnings
     openh264                  : NO Program 'nasm' not found or not executable
-    pygobject                 : NO
-                                Dependency 'glib-2.0' is required but not found.
     sqlite3                   : YES
     tinyalsa                  : NO
                                 Neither a subproject directory nor a tinyalsa.wrap file was found.
