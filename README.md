@@ -85,6 +85,7 @@ First of all you may check (in the Dockerfile) that the meson build configuratio
 ```
 # from the root project folder
 docker build --no-cache -f Dockerfile.debian -t debian-gstreamer:debian11-gstreamer1.22.3 . 2>&1 | tee build.log
+# run container
 docker run --rm -i -t debian-gstreamer:debian11-gstreamer1.22.3 bash
 # with GPU
 docker run --gpus all --rm -i -t debian-gstreamer:debian11-gstreamer1.22.3 bash
@@ -100,7 +101,7 @@ Create a data folder (mounted as a volume in `docker run`) with an input.mkv fil
 
 ```
 mkdir -p data
-docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:latest bash
+docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:debian11-gstreamer1.22.3 bash
 # now in container
 gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh264enc ! h264parse ! mp4mux ! filesink location=/data/output.mp4
 ```
