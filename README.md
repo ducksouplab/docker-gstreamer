@@ -2,7 +2,7 @@
 
 Currently this project builds a Debian 11 image with:
 
-- GStreamer 1.22.2
+- GStreamer 1.22.3
 - opencv and opencv_contrib 4.7.0
 - dlib 19.24
 - libnvrtc (from CUDA) 11.7
@@ -35,7 +35,7 @@ Download source and choose version:
 git clone https://gitlab.freedesktop.org/gstreamer/gstreamer.git
 cd gstreamer
 git pull
-git checkout 1.22.2
+git checkout 1.22.3
 cd ..
 ```
 
@@ -84,16 +84,16 @@ First of all you may check (in the Dockerfile) that the meson build configuratio
 
 ```
 # from the root project folder
-docker build --no-cache -f Dockerfile.debian -t debian-gstreamer:debian11-gstreamer1.22.2 . 2>&1 | tee build.log
-docker run --rm -i -t debian-gstreamer:debian11-gstreamer1.22.2 bash
+docker build --no-cache -f Dockerfile.debian -t debian-gstreamer:debian11-gstreamer1.22.3 . 2>&1 | tee build.log
+docker run --rm -i -t debian-gstreamer:debian11-gstreamer1.22.3 bash
 # with GPU
-docker run --gpus all --rm -i -t debian-gstreamer:debian11-gstreamer1.22.2 bash
+docker run --gpus all --rm -i -t debian-gstreamer:debian11-gstreamer1.22.3 bash
 ```
 
 To build with image layers cache and save the output of the build you may alternatively run:
 
 ```
-docker build -f Dockerfile.debian -t debian-gstreamer:debian11-gstreamer1.22.2 . 2>&1 | tee build.log
+docker build -f Dockerfile.debian -t debian-gstreamer:debian11-gstreamer1.22.3 . 2>&1 | tee build.log
 ```
 
 Create a data folder (mounted as a volume in `docker run`) with an input.mkv file , run and enter container, then try nvcodec:
@@ -110,20 +110,20 @@ gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh
 Tag and push image if wanted (`ducksouplab/debian-gstreamer` as an example):
 
 ```
-docker tag debian-gstreamer:debian11-gstreamer1.22.2 ducksouplab/debian-gstreamer:debian11-gstreamer1.22.2
-docker push ducksouplab/debian-gstreamer:debian11-gstreamer1.22.2
+docker tag debian-gstreamer:debian11-gstreamer1.22.3 ducksouplab/debian-gstreamer:debian11-gstreamer1.22.3
+docker push ducksouplab/debian-gstreamer:debian11-gstreamer1.22.3
 ```
 
 ### Build from CUDA image
 
 ```
-docker build -f Dockerfile.ubuntu.cuda -t ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.2 .
+docker build -f Dockerfile.ubuntu.cuda -t ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.3 .
 ```
 
 Share
 ```
-docker tag ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.2 ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.2
-docker push ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.2
+docker tag ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.3 ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.3
+docker push ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.3
 ```
 
 ### Image build log sample
@@ -138,11 +138,11 @@ Build targets in project: 493
      YUV format            : YUY2
      assembly optimizations: YES
  
- gst-editing-services 1.22.2
+ gst-editing-services 1.22.3
  
      Plugins: nle, ges
  
- gst-plugins-bad 1.22.2
+ gst-plugins-bad 1.22.3
  
      Plugins               : accurip, adpcmdec, adpcmenc, aiff, asfmux,
                              audiobuffersplit, audiofxbad, audiomixmatrix,
@@ -167,7 +167,7 @@ Build targets in project: 493
                              ttmlsubs, webrtc
      (A)GPL license allowed: True
  
- gst-plugins-base 1.22.2
+ gst-plugins-base 1.22.3
  
      Plugins: adder, app, audioconvert, audiomixer, audiorate, audioresample,
               audiotestsrc, compositor, encoding, gio, overlaycomposition,
@@ -175,7 +175,7 @@ Build targets in project: 493
               videoconvertscale, videorate, videotestsrc, volume, ogg, opus,
               pango, vorbis, ximagesink
  
- gst-plugins-good 1.22.2
+ gst-plugins-good 1.22.3
  
      Plugins: alpha, alphacolor, apetag, audiofx, audioparsers, auparse,
               autodetect, avi, cutter, navigationtest, debug, deinterlace, dtmf,
@@ -187,20 +187,20 @@ Build targets in project: 493
               y4menc, ossaudio, oss4, video4linux2, ximagesrc, adaptivedemux2,
               cairo, flac, jpeg, lame, dv, png, soup, vpx
  
- gst-plugins-ugly 1.22.2
+ gst-plugins-ugly 1.22.3
  
      Plugins               : asf, dvdlpcmdec, dvdsub, realmedia, x264
      (A)GPL license allowed: True
  
- gst-rtsp-server 1.22.2
+ gst-rtsp-server 1.22.3
  
      Plugins: rtspclientsink
  
- gstreamer 1.22.2
+ gstreamer 1.22.3
  
      Plugins: coreelements, coretracers
  
- gstreamer-vaapi 1.22.2
+ gstreamer-vaapi 1.22.3
  
      Plugins: vaapi
  
@@ -218,7 +218,7 @@ Build targets in project: 493
     Manual pages : NO
     Tests        : YES
 
-gstreamer-full 1.22.2
+gstreamer-full 1.22.3
 
   Build options
     gstreamer-full library    : NO
