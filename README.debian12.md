@@ -1,11 +1,13 @@
+CAUTION: CURRENTLY NOT WORKING, prefer debian 11 version described in README.md
+
 # Debian-based Docker image for GStreamer
 
-Currently this project builds a Debian 11 image with:
+Currently this project builds a Debian 12 image with:
 
 - GStreamer 1.22.5
-- opencv and opencv_contrib 4.7.0
+- opencv and opencv_contrib 4.8.0
 - dlib 19.24
-- libnvrtc (from CUDA) 11.7
+- libnvrtc (from CUDA) 12.2
 
 It's available here: https://hub.docker.com/r/ducksouplab/debian-gstreamer
 
@@ -43,11 +45,11 @@ cd ..
 
 Download opencv and opencv_contrib src:
 ```
-curl https://github.com/opencv/opencv/archive/refs/tags/4.7.0.zip -L --output deps/opencv.zip
-curl https://github.com/opencv/opencv_contrib/archive/refs/tags/4.7.0.zip -L --output deps/opencv_contrib.zip
+curl https://github.com/opencv/opencv/archive/refs/tags/4.8.0.zip -L --output deps/opencv-4.8.0.zip
+curl https://github.com/opencv/opencv_contrib/archive/refs/tags/4.8.0.zip -L --output deps/opencv_contrib-4.8.0.zip
 ```
 
-Then edit Dockerfiles `OPENCV_VERSION` env to the chosen version, `4.7.0` in the above example.
+Then edit Dockerfiles `OPENCV_VERSION` env to the chosen version, `4.8.0` in the above example.
 
 #### dlib
 
@@ -62,11 +64,11 @@ curl http://dlib.net/files/dlib-19.24.tar.bz2 --output deps/dlib.tar.bz2
 
 libnvrtc.so is needed to enable `cudaconvert`, `cudascale `and `cudaconvertscale` GStreamer plugins.
 
-In the following example we picked CUDA 11.7 that is compatible with the driver 515 of our GPU.
+In the following example we picked CUDA 12.2 that is compatible with the driver version 525.
 
 ```
-wget https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/cuda-nvrtc-dev-11-7_11.7.50-1_amd64.deb
-wget https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/cuda-nvrtc-11-7_11.7.50-1_amd64.deb
+wget https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/cuda-nvrtc-dev-12-2_12.2.128-1_amd64.deb
+wget https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/cuda-nvrtc-12-2_12.2.128-1_amd64.deb
 ```
 
 You may pick another, looking at: https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/
@@ -84,13 +86,13 @@ First of all you may check (in the Dockerfile) that the meson build configuratio
 
 ```
 # from the root project folder
-docker build --no-cache -f Dockerfile.debian11 -t debian-gstreamer:debian11-gstreamer1.22.5 . 2>&1 | tee build.debian11.log
+docker build --no-cache -f Dockerfile.debian12 -t debian-gstreamer:debian12-gstreamer1.22.5 . 2>&1 | tee build.debian12.log
 
 # run container
-docker run --rm -i -t debian-gstreamer:debian11-gstreamer1.22.5 bash
+docker run --rm -i -t debian-gstreamer:debian12-gstreamer1.22.5 bash
 
 # with GPU
-docker run --gpus all --rm -i -t debian-gstreamer:debian11-gstreamer1.22.5 bash
+docker run --gpus all --rm -i -t debian-gstreamer:debian12-gstreamer1.22.5 bash
 
 # within the container
 gst-inspect-1.0 nvcodec
@@ -99,14 +101,14 @@ gst-inspect-1.0 nvcodec
 To build with image layers cache and save the output of the build you may alternatively run:
 
 ```
-docker build -f Dockerfile.debian -t debian-gstreamer:debian11-gstreamer1.22.5 . 2>&1 | tee build.debian11.log
+docker build -f Dockerfile.debian -t debian-gstreamer:debian12-gstreamer1.22.5 . 2>&1 | tee build.log
 ```
 
 Create a data folder (mounted as a volume in `docker run`) with an input.mkv file , run and enter container, then try nvcodec:
 
 ```
 mkdir -p data
-docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:debian11-gstreamer1.22.5 bash
+docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:debian12-gstreamer1.22.5 bash
 # now in container
 gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh264enc ! h264parse ! mp4mux ! filesink location=/data/output.mp4
 ```
@@ -116,8 +118,8 @@ gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh
 Tag and push image if wanted (`ducksouplab/debian-gstreamer` as an example):
 
 ```
-docker tag debian-gstreamer:debian11-gstreamer1.22.5 ducksouplab/debian-gstreamer:debian11-gstreamer1.22.5
-docker push ducksouplab/debian-gstreamer:debian11-gstreamer1.22.5
+docker tag debian-gstreamer:debian12-gstreamer1.22.5 ducksouplab/debian-gstreamer:debian12-gstreamer1.22.5
+docker push ducksouplab/debian-gstreamer:debian12-gstreamer1.22.5
 ```
 
 ### Build from CUDA image

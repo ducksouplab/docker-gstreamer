@@ -1,4 +1,4 @@
-FROM debian:bullseye AS opencv-builder
+FROM debian:11 AS opencv-builder
 
 RUN apt-get upgrade -y
 RUN apt-get update && apt-get install -y cmake g++ unzip

@@ -1,0 +1,123 @@
+FROM debian:12 AS opencv-builder
+
+RUN apt-get upgrade -y
+RUN apt-get update && apt-get install -y cmake g++ unzip
+
+# build opencv https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html
+WORKDIR /install/opencv
+
+COPY deps/opencv-4.8.0.zip deps/opencv_contrib-4.8.0.zip ./
+RUN unzip opencv-4.8.0.zip
+RUN unzip opencv_contrib-4.8.0.zip
+RUN mkdir -p build
+
+WORKDIR /install/opencv/build
+RUN cmake -DOPENCV_GENERATE_PKGCONFIG=ON -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib-4.8.0/modules/ ../opencv-4.8.0/
+RUN cmake --build .
+RUN make install
+
+FROM opencv-builder AS gstreamer-builder
+
+RUN apt-get upgrade -y
+RUN apt-get update && apt-get install -y git ninja-build cmake \
+    pkg-config libmount-dev flex bison bzip2 curl
+
+RUN apt-get update && apt-get install -y python3-pip
+RUN pip3 install meson
+
+# minimize build by providing dev libraries
+RUN apt-get update && apt-get install -y zlib1g-dev libglib2.0-dev libffi-dev libssl-dev
+
+# plugins dependencies: soundtouch
+RUN apt-get update && apt-get install -y libsndfile1-dev libsoundtouch-dev libvpx-dev
+
+# plugin dependencies: pango
+RUN apt-get update && apt-get install -y libpango1.0-dev libpangocairo-1.0-0 libcairo2-dev
+
+# plugin dependencies: vaapi
+RUN apt-get update && apt-get install -y libva-dev
+
+# build gstreamer
+WORKDIR /install/gstreamer
+
+COPY deps/gstreamer .
+
+RUN apt-get upgrade -y
+
+# rust (change -Drs=disabled to enabled below)
+# RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+# RUN ["/bin/bash", "-c", "source $HOME/.cargo/env"]
+# RUN $HOME/.cargo/bin/cargo install cargo-c
+
+RUN meson --prefix=/gstreamer/install -Dgpl=enabled -Dvaapi=enabled -Drs=disabled -Dlibav=enabled  -Dgst-plugins-ugly:x264=enabled -Dgst-plugins-base:pango=enabled -Ddevtools=disabled -Dtests=disabled -Dexamples=disabled -Ddoc=disabled -Dorc=disabled -Dlibsoup:sysprof=disabled -Dbuildtype=release build
+
+RUN ninja -C build
+RUN meson install -C build
+
+# build dlib
+WORKDIR /install/dlib
+COPY deps/dlib.tar.bz2 .
+RUN mkdir -p /dlib/src/build /dlib/install
+RUN tar -xvf ./dlib.tar.bz2 -C . --strip-components 1
+
+WORKDIR /install/dlib/build
+RUN cmake -GNinja \
+    -DCMAKE_INSTALL_PREFIX:PATH=/dlib/install \
+    -DCMAKE_INSTALL_LIBDIR:PATH=/dlib/install/lib \
+    -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DUSE_SSE2_INSTRUCTIONS=ON \
+    -DUSE_SSE4_INSTRUCTIONS=ON \
+    -DUSE_AVX_INSTRUCTIONS=ON \
+    -DDLIB_USE_CUDA=OFF \
+    ".."
+RUN ninja
+RUN ninja install
+
+FROM opencv-builder AS final
+
+RUN apt-get upgrade -y
+RUN apt-get update
+
+# dev versions may still be useful is image is used for dev purposes
+RUN apt-get update && apt-get install -y zlib1g-dev libglib2.0-dev libffi-dev libssl-dev
+
+# plugins dependencies: soundtouch, opencv, nvcodec, vaapi
+RUN apt-get update && apt-get install -y libsndfile1 libsoundtouch1 libopencv-dev libegl1 libgles-dev
+
+# dlib additionals
+RUN apt-get update && apt-get install -y libopenblas-base \
+    libopenblas-dev \
+    liblapack-dev \
+    libdlib-data
+
+# for plugin scanner
+RUN apt-get update && apt-get install -y libpython3.9
+
+# for CGO
+RUN apt-get update && apt-get install -y libunwind-dev libdw-dev
+
+# for cuda* plugins (only needed as runtime dependencies, not before GStreamer build)
+WORKDIR /install/cuda
+COPY deps/cuda-nvrtc-12-2_12.2.128-1_amd64.deb .
+COPY deps/cuda-nvrtc-dev-12-2_12.2.128-1_amd64.deb .
+RUN apt-get install ./cuda-nvrtc-12-2_12.2.128-1_amd64.deb
+RUN apt-get install ./cuda-nvrtc-dev-12-2_12.2.128-1_amd64.deb
+
+# plugin dependencies: pango
+# RUN apt-get update && apt-get install -y libpango1.0-dev libpangocairo-1.0-0 libcairo2-dev
+
+COPY --from=gstreamer-builder /gstreamer/install /opt/gstreamer
+COPY --from=gstreamer-builder /dlib/install /opt/dlib
+
+ENV PATH="${PATH}:/opt/gstreamer/bin"
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/gstreamer/lib/x86_64-linux-gnu:/opt/dlib/lib:/usr/local/cuda-11.7/lib64"
+ENV LIBRARY_PATH="${LIBRARY_PATH}:/opt/gstreamer/lib/x86_64-linux-gnu:/opt/dlib/lib:/usr/local/cuda-11.7/lib64"
+ENV PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/opt/gstreamer/lib/x86_64-linux-gnu/pkgconfig:/opt/dlib/lib/pkgconfig"
+ENV CPLUS_INCLUDE_PATH="${CPLUS_INCLUDE_PATH}:/opt/gstreamer/include/gstreamer-1.0:/opt/dlib/include"
+ENV GST_PLUGIN_PATH=/opt/gstreamer/lib/x86_64-linux-gnu/gstreamer-1.0
+ENV GST_PLUGIN_SCANNER=/opt/gstreamer/libexec/gstreamer-1.0/gst-plugin-scanner
+ENV PYTHONPATH=/opt/gstreamer/lib/python3.9/site-packages
+ENV GI_TYPELIB_PATH=/opt/gstreamer/lib/x86_64-linux-gnu/girepository-1.0/
+ENV NVIDIA_DRIVER_CAPABILITIES all
+ENV NVIDIA_VISIBLE_DEVICES all
