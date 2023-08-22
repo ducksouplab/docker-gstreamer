@@ -25,7 +25,7 @@ mkdir -p deps
 cd deps
 ```
 
-You will have to edit Dockerfile.debian if you select different versions of opencv, dlib or nvrtc.
+You will have to edit Dockerfile.debian11 if you select different versions of opencv, dlib or nvrtc.
 
 #### GStreamer
 
@@ -62,14 +62,15 @@ curl http://dlib.net/files/dlib-19.24.tar.bz2 --output deps/dlib.tar.bz2
 
 libnvrtc.so is needed to enable `cudaconvert`, `cudascale `and `cudaconvertscale` GStreamer plugins.
 
-In the following example we picked CUDA 11.7 that is compatible with the driver 515 of our GPU.
+In the following example we picked CUDA 12.2 that is compatible with the driver 535.
 
 ```
-wget https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/cuda-nvrtc-dev-11-7_11.7.50-1_amd64.deb
-wget https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/cuda-nvrtc-11-7_11.7.50-1_amd64.deb
+cd deps
+wget https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/cuda-nvrtc-dev-12-2_12.2.128-1_amd64.deb
+wget https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/cuda-nvrtc-12-2_12.2.128-1_amd64.deb
 ```
 
-You may pick another, looking at: https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/
+You may pick another, looking at: https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/ (for instance version 11-7_11.7.50-1 for driver 515)
 
 Alternatives to this handpicked nvrtc package installation are:
 
@@ -77,14 +78,13 @@ Alternatives to this handpicked nvrtc package installation are:
 
 - start from an nvidia/cuda devel image (rather than a bare debian one), for instance nvidia/cuda:11.7.0-devel-ubuntu22.04 (`Dockerfile.ubuntu.cuda` is provided as an example)
 
-
 ### Build and run
 
 First of all you may check (in the Dockerfile) that the meson build configuration options fit with your purpose (`-Dbuiltype` for instance). Available options are listed by `meson configure` (within a container). Build and run:
 
 ```
 # from the root project folder
-docker build --no-cache -f Dockerfile.debian11 -t debian-gstreamer:debian11-gstreamer1.22.5 . 2>&1 | tee build.debian11.log
+docker build --no-cache -f Dockerfile.debian11 -t debian-gstreamer:deb11-cuda12.2-gst1.22.5 . 2>&1 | tee build.debian11.log
 
 # run container
 docker run --rm -i -t debian-gstreamer:debian11-gstreamer1.22.5 bash
@@ -99,7 +99,7 @@ gst-inspect-1.0 nvcodec
 To build with image layers cache and save the output of the build you may alternatively run:
 
 ```
-docker build -f Dockerfile.debian -t debian-gstreamer:debian11-gstreamer1.22.5 . 2>&1 | tee build.debian11.log
+docker build -f Dockerfile.debian11 -t debian-gstreamer:deb11-cuda12.2-gst1.22.5 . 2>&1 | tee build.debian11.log
 ```
 
 Create a data folder (mounted as a volume in `docker run`) with an input.mkv file , run and enter container, then try nvcodec:
@@ -116,8 +116,8 @@ gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh
 Tag and push image if wanted (`ducksouplab/debian-gstreamer` as an example):
 
 ```
-docker tag debian-gstreamer:debian11-gstreamer1.22.5 ducksouplab/debian-gstreamer:debian11-gstreamer1.22.5
-docker push ducksouplab/debian-gstreamer:debian11-gstreamer1.22.5
+docker tag debian-gstreamer:deb11-cuda12.2-gst1.22.5 ducksouplab/debian-gstreamer:deb11-cuda12.2-gst1.22.5
+docker push ducksouplab/debian-gstreamer:deb11-cuda12.2-gst1.22.5
 ```
 
 ### Build from CUDA image
