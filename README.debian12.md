@@ -4,7 +4,7 @@ CAUTION: CURRENTLY NOT WORKING, prefer debian 11 version described in README.md
 
 Currently this project builds a Debian 12 image with:
 
-- GStreamer 1.22.5
+- GStreamer 1.22.6
 - opencv and opencv_contrib 4.8.0
 - dlib 19.24
 - libnvrtc (from CUDA) 12.2
@@ -27,7 +27,7 @@ mkdir -p deps
 cd deps
 ```
 
-You will have to edit Dockerfile.debian if you select different versions of opencv, dlib or nvrtc.
+You will have to edit Dockerfile.debian12 if you select different versions of opencv, dlib or nvrtc.
 
 #### GStreamer
 
@@ -37,7 +37,7 @@ Download source and choose version:
 git clone https://gitlab.freedesktop.org/gstreamer/gstreamer.git
 cd gstreamer
 git pull
-git checkout 1.22.5
+git checkout 1.22.6
 cd ..
 ```
 
@@ -82,33 +82,35 @@ Alternatives to this handpicked nvrtc package installation are:
 
 ### Build and run
 
-First of all you may check (in the Dockerfile) that the meson build configuration options fit with your purpose (`-Dbuiltype` for instance). Available options are listed by `meson configure` (within a container). Build and run:
+First of all you may check (in the Dockerfile) that the meson build configuration options fit with your purpose (`-Dbuiltype` for instance). Available options are listed by `meson configure` (within a container).
+
+To build with image layers cache and save the output of the build you may:
+
+```
+docker build -f Dockerfile.debian12 -t debian-gstreamer:deb12-cuda12.2-gst1.22.6 . 2>&1 | tee build.log
+```
+
+Without the cache:
 
 ```
 # from the root project folder
-docker build --no-cache -f Dockerfile.debian12 -t debian-gstreamer:debian12-gstreamer1.22.5 . 2>&1 | tee build.debian12.log
+docker build --no-cache -f Dockerfile.debian12 -t debian-gstreamer:deb12-cuda12.2-gst1.22.6 . 2>&1 | tee build.debian12.log
 
 # run container
-docker run --rm -i -t debian-gstreamer:debian12-gstreamer1.22.5 bash
+docker run --rm -i -t debian-gstreamer:deb12-cuda12.2-gst1.22.6 bash
 
 # with GPU
-docker run --gpus all --rm -i -t debian-gstreamer:debian12-gstreamer1.22.5 bash
+docker run --gpus all --rm -i -t debian-gstreamer:deb12-cuda12.2-gst1.22.6 bash
 
 # within the container
 gst-inspect-1.0 nvcodec
-```
-
-To build with image layers cache and save the output of the build you may alternatively run:
-
-```
-docker build -f Dockerfile.debian -t debian-gstreamer:debian12-gstreamer1.22.5 . 2>&1 | tee build.log
 ```
 
 Create a data folder (mounted as a volume in `docker run`) with an input.mkv file , run and enter container, then try nvcodec:
 
 ```
 mkdir -p data
-docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:debian12-gstreamer1.22.5 bash
+docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:deb12-cuda12.2-gst1.22.6 bash
 # now in container
 gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh264enc ! h264parse ! mp4mux ! filesink location=/data/output.mp4
 ```
@@ -118,20 +120,20 @@ gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh
 Tag and push image if wanted (`ducksouplab/debian-gstreamer` as an example):
 
 ```
-docker tag debian-gstreamer:debian12-gstreamer1.22.5 ducksouplab/debian-gstreamer:debian12-gstreamer1.22.5
-docker push ducksouplab/debian-gstreamer:debian12-gstreamer1.22.5
+docker tag debian-gstreamer:deb12-cuda12.2-gst1.22.6 ducksouplab/debian-gstreamer:deb12-cuda12.2-gst1.22.6
+docker push ducksouplab/debian-gstreamer:deb12-cuda12.2-gst1.22.6
 ```
 
 ### Build from CUDA image
 
 ```
-docker build -f Dockerfile.ubuntu.cuda -t ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.5 .
+docker build -f Dockerfile.ubuntu.cuda -t ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.6 .
 ```
 
 Share
 ```
-docker tag ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.5 ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.5
-docker push ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.5
+docker tag ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.6 ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.6
+docker push ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.6
 ```
 
 ### Image build log sample
@@ -146,11 +148,11 @@ Build targets in project: 411
      YUV format            : YUY2
      assembly optimizations: YES
  
- gst-editing-services 1.22.5
+ gst-editing-services 1.22.6
  
      Plugins: nle, ges
  
- gst-plugins-bad 1.22.5
+ gst-plugins-bad 1.22.6
  
      Plugins               : accurip, adpcmdec, adpcmenc, aiff, asfmux,
                              audiobuffersplit, audiofxbad, audiomixmatrix,
@@ -175,7 +177,7 @@ Build targets in project: 411
                              ttmlsubs, webrtc
      (A)GPL license allowed: True
  
- gst-plugins-base 1.22.5
+ gst-plugins-base 1.22.6
  
      Plugins: adder, app, audioconvert, audiomixer, audiorate, audioresample,
               audiotestsrc, compositor, encoding, gio, overlaycomposition,
@@ -183,7 +185,7 @@ Build targets in project: 411
               videoconvertscale, videorate, videotestsrc, volume, ogg, opus,
               pango, vorbis, ximagesink
  
- gst-plugins-good 1.22.5
+ gst-plugins-good 1.22.6
  
      Plugins: alpha, alphacolor, apetag, audiofx, audioparsers, auparse,
               autodetect, avi, cutter, navigationtest, debug, deinterlace, dtmf,
@@ -195,20 +197,20 @@ Build targets in project: 411
               y4menc, ossaudio, oss4, video4linux2, ximagesrc, adaptivedemux2,
               cairo, flac, jpeg, lame, dv, png, soup, vpx
  
- gst-plugins-ugly 1.22.5
+ gst-plugins-ugly 1.22.6
  
      Plugins               : asf, dvdlpcmdec, dvdsub, realmedia, x264
      (A)GPL license allowed: True
  
- gst-rtsp-server 1.22.5
+ gst-rtsp-server 1.22.6
  
      Plugins: rtspclientsink
  
- gstreamer 1.22.5
+ gstreamer 1.22.6
  
      Plugins: coreelements, coretracers
  
- gstreamer-vaapi 1.22.5
+ gstreamer-vaapi 1.22.6
  
      Plugins: vaapi
  
@@ -226,7 +228,7 @@ Build targets in project: 411
      Manual pages : NO
      Tests        : YES
  
- gstreamer-full 1.22.5
+ gstreamer-full 1.22.6
  
    Build options
      gstreamer-full library    : NO

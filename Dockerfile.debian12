@@ -23,6 +23,10 @@ RUN apt-get update && apt-get install -y git ninja-build cmake \
     pkg-config libmount-dev flex bison bzip2 curl
 
 RUN apt-get update && apt-get install -y python3-pip
+RUN apt-get update && apt install -y python3-venv
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip3 install meson
 
 # minimize build by providing dev libraries
@@ -86,13 +90,12 @@ RUN apt-get update && apt-get install -y zlib1g-dev libglib2.0-dev libffi-dev li
 RUN apt-get update && apt-get install -y libsndfile1 libsoundtouch1 libopencv-dev libegl1 libgles-dev
 
 # dlib additionals
-RUN apt-get update && apt-get install -y libopenblas-base \
-    libopenblas-dev \
+RUN apt-get update && apt-get install -y libopenblas-dev \
     liblapack-dev \
     libdlib-data
 
 # for plugin scanner
-RUN apt-get update && apt-get install -y libpython3.9
+RUN apt-get update && apt-get install -y libpython3.11
 
 # for CGO
 RUN apt-get update && apt-get install -y libunwind-dev libdw-dev
