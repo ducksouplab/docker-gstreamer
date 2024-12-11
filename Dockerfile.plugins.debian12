@@ -3,6 +3,13 @@ FROM debian:12 AS opencv-builder
 RUN apt-get upgrade -y
 RUN apt-get update && apt-get install -y cmake g++ unzip
 
+# Install prerequisites
+RUN apt-get update && apt-get install -y \
+    git ninja-build cmake pkg-config libmount-dev flex bison bzip2 curl \
+    python3-pip python3-venv zlib1g-dev libglib2.0-dev libffi-dev libssl-dev \
+    libwebrtc-audio-processing-dev  # <-- Key dependency for webrtcdsp
+
+
 # build opencv https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html
 WORKDIR /install/opencv
 
@@ -53,7 +60,10 @@ RUN apt-get upgrade -y
 # RUN ["/bin/bash", "-c", "source $HOME/.cargo/env"]
 # RUN $HOME/.cargo/bin/cargo install cargo-c
 
-RUN meson --prefix=/gstreamer/install -Dgpl=enabled -Dvaapi=enabled -Drs=disabled -Dlibav=enabled  -Dgst-plugins-ugly:x264=enabled -Dgst-plugins-base:pango=enabled -Ddevtools=disabled -Dtests=disabled -Dexamples=disabled -Ddoc=disabled -Dorc=disabled -Dlibsoup:sysprof=disabled -Dbuildtype=release build
+RUN meson --prefix=/gstreamer/install -Dgpl=enabled -Dvaapi=enabled -Drs=disabled \
+    -Dlibav=enabled -Dgst-plugins-base:pango=enabled -Ddevtools=disabled \
+    -Dtests=disabled -Dexamples=disabled -Ddoc=disabled -Dorc=disabled \
+    -Dlibsoup:sysprof=disabled -Dbuildtype=release build
 
 RUN ninja -C build
 RUN meson install -C build

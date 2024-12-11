@@ -84,6 +84,8 @@ Alternatives to this handpicked nvrtc package installation are:
 
 First of all you may check (in the Dockerfile) that the meson build configuration options fit with your purpose (`-Dbuiltype` for instance). Available options are listed by `meson configure` (within a container).
 
+
+#### Without plugins
 To build with image layers cache and save the output of the build you may:
 
 ```
@@ -115,7 +117,7 @@ docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:deb12-c
 gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh264enc ! h264parse ! mp4mux ! filesink location=/data/output.mp4
 ```
 
-### Share image
+Share image:
 
 Tag and push image if wanted (`ducksouplab/debian-gstreamer` as an example):
 
@@ -123,6 +125,48 @@ Tag and push image if wanted (`ducksouplab/debian-gstreamer` as an example):
 docker tag debian-gstreamer:deb12-cuda12.2-gst1.22.6 ducksouplab/debian-gstreamer:deb12-cuda12.2-gst1.22.6
 docker push ducksouplab/debian-gstreamer:deb12-cuda12.2-gst1.22.6
 ```
+
+#### Build with Plugins
+To build with image layers cache and save the output of the build you may:
+
+```
+docker build -f Dockerfile.plugins.debian12 -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6 . 2>&1 | tee build.log
+```
+
+Without the cache:
+
+```
+# from the root project folder
+docker build --no-cache -f Dockerfile.plugins.debian12 -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6 . 2>&1 | tee build.debian12.log
+
+# run container
+docker run --rm -i -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6 bash
+
+# with GPU
+docker run --gpus all --rm -i -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6 bash
+
+# within the container
+gst-inspect-1.0 nvcodec
+```
+
+Create a data folder (mounted as a volume in `docker run`) with an input.mkv file , run and enter container, then try nvcodec:
+
+```
+mkdir -p data
+docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6 bash
+# now in container
+gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh264enc ! h264parse ! mp4mux ! filesink location=/data/output.mp4
+```
+
+Share image:
+
+Tag and push image if wanted (`ducksouplab/debian-gstreamer` as an example):
+
+```
+docker tag debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6 ducksouplab/debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6
+docker push ducksouplab/debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6
+```
+
 
 ### Build from CUDA image
 
