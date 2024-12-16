@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y cmake g++ unzip
 
 # build opencv https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html
 WORKDIR /opencv/src
-ENV OPENCV_VERSION=4.7.0
+ENV OPENCV_VERSION=4.8.0
 
 COPY deps/opencv.zip deps/opencv_contrib.zip ./
 RUN unzip opencv.zip
