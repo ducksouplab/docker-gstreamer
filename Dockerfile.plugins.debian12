@@ -54,7 +54,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip3 install meson
 
 # minimize build by providing dev libraries
-RUN apt-get update && apt-get install -y zlib1g-dev libglib2.0-dev libffi-dev libssl-dev
+RUN apt-get update && apt-get install -y zlib1g-dev libglib2.0-dev libffi-dev libssl-dev libwebrtc-audio-processing-dev
 
 # plugins dependencies: soundtouch
 RUN apt-get update && apt-get install -y libsndfile1-dev libsoundtouch-dev libvpx-dev
@@ -81,7 +81,8 @@ RUN meson setup --prefix=/gstreamer/install -Dgpl=enabled -Dvaapi=enabled -Drs=d
     -Dlibav=enabled -Dgst-plugins-base:pango=enabled -Ddevtools=disabled \
     -Dtests=disabled -Dexamples=disabled -Ddoc=disabled -Dorc=disabled \
     -Dlibsoup:sysprof=disabled -Dbuildtype=release \
-    build
+    -Dgst-plugins-bad:webrtcdsp=enabled \
+    build 
 
 RUN ninja -C build -j$(nproc)
 RUN meson install -C build
@@ -123,26 +124,29 @@ RUN apt-get update && apt-get install -y \
     gir1.2-gstreamer-1.0 \
     libsoup2.4-1 \
     libjack-jackd2-0 \
-    wget
-
+    wget \
+    libwebrtc-audio-processing1
 
 # dlib additionals
 RUN apt-get update && apt-get install -y libopenblas-dev \
     liblapack-dev \
     libdlib-data
 
+
+RUN apt-get update && apt-get install -y \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    gstreamer1.0-alsa \
+    gstreamer1.0-gl
+
 # for plugin scanner
 RUN apt-get update && apt-get install -y libpython3.11
 
 # for CGO
 RUN apt-get update && apt-get install -y libunwind-dev libdw-dev
-
-# Install libssl1.1 manually (For legacy mozza plugin compatibility — eventually we should just recompile these plugins )
-RUN wget http://deb.debian.org/debian/pool/main/o/openssl/libssl1.1_1.1.1t-1+deb11u12_amd64.deb && \
-    dpkg -i libssl1.1_1.1.1t-1+deb11u12_amd64.deb || true && \
-    apt-get install -f -y && \
-    rm -f libssl1.1_1.1.1t-1+deb11u12_amd64.deb
-
 
 # for cuda* plugins (only needed as runtime dependencies, not before GStreamer build)
 WORKDIR /install/cuda
@@ -172,5 +176,3 @@ ENV NVIDIA_VISIBLE_DEVICES=all
 
 # Optionally, verify Python GI
 RUN python3 -c "import gi; gi.require_version('Gst', '1.0'); from gi.repository import Gst; print('Gst version:', Gst.version_string())"
-
-RUN ENV XDG_CACHE_HOME="/tmp"
