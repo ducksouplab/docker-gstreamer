@@ -1,5 +1,3 @@
-CAUTION: CURRENTLY NOT WORKING, prefer debian 11 version described in README.md
-
 # Debian-based Docker image for GStreamer
 
 Currently this project builds a Debian 12 image with:
@@ -179,6 +177,17 @@ Share
 docker tag ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.6 ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.6
 docker push ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.6
 ```
+
+#### Build for mac
+To build for mac, use the Dockerfile.plugins.mac.debian12 dockerfile
+
+```
+docker build -f Dockerfile.plugins.mac.debian12 -t debian-gstreamer:deb12-with-plugins-gst1.22.6-mac . 2>&1 | tee build.log
+docker tag debian-gstreamer:deb12-with-plugins-gst1.22.6-mac ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-mac
+docker push ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-mac
+```
+
+
 
 ### Image build log sample
 

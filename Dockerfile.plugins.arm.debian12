@@ -1,0 +1,179 @@
+## This is currently not working, for this to work, I'll need
+FROM arm64v8/debian:12 AS opencv-builder
+
+RUN apt-get update && apt-get install -y \
+    cmake \
+    g++ \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+
+# Install prerequisites
+RUN apt-get update && apt-get install -y \
+    git ninja-build cmake pkg-config libmount-dev flex bison bzip2 curl \
+    python3-pip python3-venv zlib1g-dev libglib2.0-dev libffi-dev\
+    libwebrtc-audio-processing-dev python3-gi \
+    libjack-jackd2-0 libsoup2.4-1
+
+
+# build opencv https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html
+WORKDIR /install/opencv
+
+COPY deps/opencv-4.8.0.zip deps/opencv_contrib-4.8.0.zip ./
+RUN unzip opencv-4.8.0.zip
+RUN unzip opencv_contrib-4.8.0.zip
+RUN mkdir -p build
+
+WORKDIR /install/opencv/build
+RUN cmake -DOPENCV_GENERATE_PKGCONFIG=ON -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib-4.8.0/modules/ ../opencv-4.8.0/
+RUN cmake --build . -- -j$(nproc)
+RUN make install
+
+FROM opencv-builder AS gstreamer-builder
+
+RUN apt-get upgrade -y
+RUN apt-get update && apt-get install -y git ninja-build cmake \
+    pkg-config libmount-dev flex bison bzip2 curl nasm
+
+
+# Install GObject Introspection dependencies
+RUN apt-get update && apt-get install -y \
+    gobject-introspection \
+    libgirepository1.0-dev
+
+
+RUN apt-get update && apt-get install -y python3-pip
+RUN apt-get update && apt install -y python3-venv
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN pip3 install meson
+
+# minimize build by providing dev libraries
+RUN apt-get update && apt-get install -y zlib1g-dev libglib2.0-dev libffi-dev libssl-dev libwebrtc-audio-processing-dev
+
+# plugins dependencies: soundtouch
+RUN apt-get update && apt-get install -y libsndfile1-dev libsoundtouch-dev libvpx-dev
+
+# plugin dependencies: pango
+RUN apt-get update && apt-get install -y libpango1.0-dev libpangocairo-1.0-0 libcairo2-dev
+
+# plugin dependencies: vaapi
+RUN apt-get update && apt-get install -y libva-dev
+
+# build gstreamer
+WORKDIR /install/gstreamer
+
+COPY deps/gstreamer .
+
+RUN apt-get upgrade -y
+
+# rust (change -Drs=disabled to enabled below)
+# RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+# RUN ["/bin/bash", "-c", "source $HOME/.cargo/env"]
+# RUN $HOME/.cargo/bin/cargo install cargo-c
+
+RUN meson setup --prefix=/gstreamer/install -Dgpl=enabled -Dvaapi=enabled -Drs=disabled \
+    -Dlibav=enabled -Dgst-plugins-base:pango=enabled -Ddevtools=disabled \
+    -Dtests=disabled -Dexamples=disabled -Ddoc=disabled -Dorc=disabled \
+    -Dlibsoup:sysprof=disabled -Dbuildtype=release \
+    -Dgst-plugins-bad:webrtcdsp=enabled \
+    build 
+
+RUN ninja -C build -j$(nproc)
+RUN meson install -C build
+
+# build dlib
+WORKDIR /install/dlib
+COPY deps/dlib.tar.bz2 .
+RUN mkdir -p /dlib/src/build /dlib/install
+RUN tar -xvf ./dlib.tar.bz2 -C . --strip-components 1
+
+WORKDIR /install/dlib/build
+RUN cmake -GNinja \
+    -DCMAKE_INSTALL_PREFIX:PATH=/dlib/install \
+    -DCMAKE_INSTALL_LIBDIR:PATH=/dlib/install/lib \
+    -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DUSE_SSE2_INSTRUCTIONS=ON \
+    -DUSE_SSE4_INSTRUCTIONS=ON \
+    -DUSE_AVX_INSTRUCTIONS=ON \
+    -DDLIB_USE_CUDA=OFF \
+    ".."
+RUN ninja -j$(nproc)
+RUN ninja install
+
+FROM opencv-builder AS final
+
+RUN apt-get upgrade -y
+RUN apt-get update
+
+# Install necessary runtime dependencies
+RUN apt-get update && apt-get install -y \
+    zlib1g-dev libglib2.0-dev libffi-dev\
+    libsndfile1 libsoundtouch1 libopencv-dev libegl1 libgles-dev \
+    libopenblas-dev liblapack-dev libdlib-data \
+    libpython3.11 \
+    libunwind-dev libdw-dev \
+    python3-gi \
+    python3-gi-cairo \
+    gir1.2-gstreamer-1.0 \
+    libsoup2.4-1 \
+    libjack-jackd2-0 \
+    wget \
+    libwebrtc-audio-processing1
+
+# dlib additionals
+RUN apt-get update && apt-get install -y libopenblas-dev \
+    liblapack-dev \
+    libdlib-data
+
+
+RUN apt-get update && apt-get install -y \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    gstreamer1.0-alsa \
+    gstreamer1.0-gl
+
+# for plugin scanner
+RUN apt-get update && apt-get install -y libpython3.11
+
+# for CGO
+RUN apt-get update && apt-get install -y libunwind-dev libdw-dev
+
+# for cuda* plugins (only needed as runtime dependencies, not before GStreamer build)
+#WORKDIR /install/cuda
+#COPY deps/cuda-nvrtc-12-2_12.2.128-1_amd64.deb .
+#COPY deps/cuda-nvrtc-dev-12-2_12.2.128-1_amd64.deb .
+#RUN apt-get install ./cuda-nvrtc-12-2_12.2.128-1_amd64.deb
+#RUN apt-get install ./cuda-nvrtc-dev-12-2_12.2.128-1_amd64.deb
+
+# plugin dependencies: pango
+# RUN apt-get update && apt-get install -y libpango1.0-dev libpangocairo-1.0-0 libcairo2-dev
+
+COPY --from=gstreamer-builder /gstreamer/install /opt/gstreamer
+COPY --from=gstreamer-builder /dlib/install /opt/dlib
+
+ENV PATH="${PATH}:/opt/gstreamer/bin"
+# Replace x86_64-linux-gnu with aarch64-linux-gnu, and remove or update CUDA paths if not applicable.
+ENV LD_LIBRARY_PATH="/opt/gstreamer/lib/aarch64-linux-gnu:/opt/dlib/lib:/usr/local/lib:${LD_LIBRARY_PATH}"
+ENV LIBRARY_PATH="${LIBRARY_PATH}:/opt/gstreamer/lib/aarch64-linux-gnu:/opt/dlib/lib:/usr/local/lib"
+ENV PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/opt/gstreamer/lib/aarch64-linux-gnu/pkgconfig:/opt/dlib/lib/pkgconfig:/usr/local/lib/pkgconfig"
+ENV CPLUS_INCLUDE_PATH="/opt/gstreamer/include/gstreamer-1.0:/opt/dlib/include:/usr/local/include:${CPLUS_INCLUDE_PATH}"
+ENV GST_PLUGIN_PATH="/opt/gstreamer/lib/aarch64-linux-gnu/gstreamer-1.0:/app/plugins"
+# This may also need to be changed if your gst-plugin-scanner is installed in a different location on ARM.
+ENV GST_PLUGIN_SCANNER="/opt/gstreamer/libexec/gstreamer-1.0/gst-plugin-scanner"
+ENV PYTHONPATH="/opt/gstreamer/lib/python3.9/site-packages:${PYTHONPATH}"
+ENV GI_TYPELIB_PATH="/opt/gstreamer/lib/aarch64-linux-gnu/girepository-1.0:${GI_TYPELIB_PATH}"
+# Remove NVIDIA-related variables if they are not relevant for your ARM build.
+# ENV NVIDIA_DRIVER_CAPABILITIES=all
+# ENV NVIDIA_VISIBLE_DEVICES=all
+
+# Optionally, verify Python GI
+RUN python3 -c "import gi; gi.require_version('Gst', '1.0'); from gi.repository import Gst; print('Gst version:', Gst.version_string())"
+
+# Optionally, verify Python GI
+RUN python3 -c "import gi; gi.require_version('Gst', '1.0'); from gi.repository import Gst; print('Gst version:', Gst.version_string())"
