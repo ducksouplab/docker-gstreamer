@@ -178,16 +178,14 @@ docker tag ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.6 ducksoup
 docker push ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.22.6
 ```
 
-#### Build for mac
-To build for mac, use the Dockerfile.plugins.mac.debian12 dockerfile
+#### Build for ARM processors
+To build for ARM (e.g. macs, without CUDA), use the Dockerfile.plugins.arm.debian12 dockerfile
 
 ```
-docker build -f Dockerfile.plugins.mac.debian12 -t debian-gstreamer:deb12-with-plugins-gst1.22.6-mac . 2>&1 | tee build.log
-docker tag debian-gstreamer:deb12-with-plugins-gst1.22.6-mac ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-mac
-docker push ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-mac
+docker build -f Dockerfile.plugins.arm.debian12 -t debian-gstreamer:deb12-with-plugins-gst1.22.6-arm . 2>&1 | tee build.log
+docker tag debian-gstreamer:deb12-with-plugins-gst1.22.6-arm ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-arm
+docker push ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-arm
 ```
-
-
 
 ### Image build log sample
 
