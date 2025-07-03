@@ -187,6 +187,19 @@ docker tag debian-gstreamer:deb12-with-plugins-gst1.22.6-arm ducksouplab/debian-
 docker push ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-arm
 ```
 
+
+#### Build for Intel processors - CPU ONLY
+To build for Intel computers (e.g. macs without CUDA), use the Dockerfile.plugins.debian12.intel.cpu_only dockerfile
+
+```
+docker build -f Dockerfile.plugins.debian12.intel.cpu_only -t debian-gstreamer:deb12-with-plugins-gst1.22.6-intel-cpu-only . 2>&1 | tee build.log
+docker tag debian-gstreamer:deb12-with-plugins-gst1.22.6-intel-cpu-only ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-intel-cpu-only
+docker push ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-intel-cpu-only
+```
+
+
+
+
 ### Image build log sample
 
 The meson configuration output ends by listing the enabled build targets, here is a sample of an output log:

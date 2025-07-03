@@ -1,0 +1,142 @@
+
+## ---> This has not been tested yet
+
+
+
+############################################################
+# 1.  Build OpenCV (unchanged)
+############################################################
+FROM debian:12 AS opencv-builder
+
+RUN apt-get update && apt-get install -y \
+    cmake g++ unzip \
+ && rm -rf /var/lib/apt/lists/*
+
+# ── build-time deps ───────────────────────────────────────
+RUN apt-get update && apt-get install -y \
+    git ninja-build cmake pkg-config libmount-dev flex bison bzip2 curl \
+    python3-pip python3-venv zlib1g-dev libglib2.0-dev libffi-dev \
+    libwebrtc-audio-processing-dev python3-gi libjack-jackd2-0 libsoup2.4-1
+
+WORKDIR /install/opencv
+COPY deps/opencv-4.8.0.zip deps/opencv_contrib-4.8.0.zip ./
+RUN unzip opencv-4.8.0.zip && unzip opencv_contrib-4.8.0.zip && mkdir -p build
+
+WORKDIR /install/opencv/build
+RUN cmake -DOPENCV_GENERATE_PKGCONFIG=ON \
+          -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib-4.8.0/modules/ \
+          ../opencv-4.8.0/
+RUN cmake --build . -- -j$(nproc) && make install
+
+############################################################
+# 2.  Build GStreamer (CPU-only)
+############################################################
+FROM opencv-builder AS gstreamer-builder
+
+RUN apt-get update && apt-get upgrade -y
+
+# ── build deps ────────────────────────────────────────────
+RUN apt-get update && apt-get install -y \
+    git ninja-build cmake pkg-config libmount-dev flex bison bzip2 curl nasm \
+    gobject-introspection libgirepository1.0-dev \
+    python3-pip python3-venv
+
+# Meson in a venv
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN pip3 install meson
+
+# extra dev libs for specific plugins
+RUN apt-get update && apt-get install -y \
+    zlib1g-dev libglib2.0-dev libffi-dev libssl-dev \
+    libwebrtc-audio-processing-dev \
+    libsndfile1-dev libsoundtouch-dev libvpx-dev \
+    libpango1.0-dev libpangocairo-1.0-0 libcairo2-dev \
+    libva-dev
+
+WORKDIR /install/gstreamer
+COPY deps/gstreamer .
+
+# ── Meson configure WITHOUT CUDA ──────────────────────────
+# Note: no CUDA-related options, ORC still disabled.
+RUN meson setup build \
+      --prefix=/gstreamer/install \
+      -Dgpl=enabled \
+      -Dvaapi=enabled \
+      -Drs=disabled \
+      -Dlibav=enabled \
+      -Dgst-plugins-base:pango=enabled \
+      -Dgst-plugins-bad:webrtcdsp=enabled \
+      -Ddevtools=disabled -Dtests=disabled -Dexamples=disabled -Ddoc=disabled \
+      -Dorc=disabled \
+      -Dlibsoup:sysprof=disabled \
+      -Dbuildtype=release
+
+RUN ninja -C build -j$(nproc) && meson install -C build
+
+############################################################
+# 3.  Build dlib (UNCHANGED – built without CUDA already)
+############################################################
+FROM opencv-builder AS dlib-builder
+WORKDIR /install/dlib
+COPY deps/dlib.tar.bz2 .
+RUN mkdir -p /dlib/src/build /dlib/install \
+ && tar -xvf ./dlib.tar.bz2 -C . --strip-components 1
+
+WORKDIR /install/dlib/build
+RUN cmake -GNinja \
+    -DCMAKE_INSTALL_PREFIX=/dlib/install \
+    -DCMAKE_INSTALL_LIBDIR=/dlib/install/lib \
+    -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DUSE_SSE2_INSTRUCTIONS=ON \
+    -DUSE_SSE4_INSTRUCTIONS=ON \
+    -DUSE_AVX_INSTRUCTIONS=ON \
+    -DDLIB_USE_CUDA=OFF \
+    ..
+RUN ninja -j$(nproc) && ninja install
+
+############################################################
+# 4.  Final runtime image  (CPU-only)
+############################################################
+FROM debian:12 AS final
+
+RUN apt-get update && apt-get upgrade -y
+
+# ── runtime deps (no CUDA) ────────────────────────────────
+RUN apt-get update && apt-get install -y \
+    zlib1g libglib2.0-0 libffi8 \
+    libsndfile1 libsoundtouch1 libopencv-dev libegl1 \
+    libopenblas-dev liblapack-dev libdlib-data \
+    libpython3.11 libsoup2.4-1 libjack-jackd2-0 \
+    python3-gi python3-gi-cairo gir1.2-gstreamer-1.0 \
+    libwebrtc-audio-processing1 gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly gstreamer1.0-libav \
+    gstreamer1.0-alsa gstreamer1.0-gl \
+    wget libunwind-dev libdw-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# ── copy artifacts ────────────────────────────────────────
+COPY --from=gstreamer-builder /gstreamer/install /opt/gstreamer
+COPY --from=dlib-builder       /dlib/install      /opt/dlib
+
+# ── environment (CUDA vars removed) ───────────────────────
+ENV PATH="/opt/gstreamer/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/opt/gstreamer/lib/x86_64-linux-gnu:/opt/dlib/lib:/usr/local/lib:${LD_LIBRARY_PATH}"
+ENV PKG_CONFIG_PATH="/opt/gstreamer/lib/x86_64-linux-gnu/pkgconfig:/opt/dlib/lib/pkgconfig:${PKG_CONFIG_PATH}"
+ENV CPLUS_INCLUDE_PATH="/opt/gstreamer/include/gstreamer-1.0:/opt/dlib/include:/usr/local/include:${CPLUS_INCLUDE_PATH}"
+ENV GST_PLUGIN_PATH="/opt/gstreamer/lib/x86_64-linux-gnu/gstreamer-1.0:/app/plugins"
+ENV GST_PLUGIN_SCANNER="/opt/gstreamer/libexec/gstreamer-1.0/gst-plugin-scanner"
+ENV PYTHONPATH="/opt/gstreamer/lib/python3.11/site-packages:${PYTHONPATH}"
+ENV GI_TYPELIB_PATH="/opt/gstreamer/lib/x86_64-linux-gnu/girepository-1.0:${GI_TYPELIB_PATH}"
+
+# ── verify GStreamer inside the image ─────────────────────
+RUN python3 - <<'PY'
+import gi, sys
+gi.require_version("Gst", "1.0")
+from gi.repository import Gst
+Gst.init(None)
+print("GStreamer (CPU-only) version:", Gst.version_string())
+PY

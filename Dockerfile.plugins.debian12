@@ -1,5 +1,4 @@
 ## This is currently not working, for this to work, I'll need
-# - It turns out that for the avocoder to work, I need to use the old version of openssl (1.1.1.). Because avocoder is outdated. So I can't work with the new versions without recompiling avocoder api. It might be that one solution is to use opeenssl 1.1.1 (i.e. downgrade from 3.8), and that that might work, but it's really not clear if that's an actual intelligent possibilty. In any case it won't work long term.
 # - Also, ducksoup version built with this base image require that we change nvh264sldec plugin in the pipeline to nvh264dec, as it was renamed in the new version of gstreamer: See here : https://gstreamer.freedesktop.org/releases/1.24/ 
 
 
