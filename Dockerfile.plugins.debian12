@@ -111,7 +111,7 @@ RUN apt-get update
 # Install necessary runtime dependencies
 RUN apt-get update && apt-get install -y \
     zlib1g-dev libglib2.0-dev libffi-dev\
-    libsndfile1 libsoundtouch1 libopencv-dev libegl1 libgles-dev \
+    libsndfile1 libsoundtouch1 libopencv-dev libegl1 libgles-dev libglvnd-dev libglvnd0 \
     libopenblas-dev liblapack-dev libdlib-data \
     libpython3.11 \
     libunwind-dev libdw-dev \
@@ -171,9 +171,10 @@ ENV GST_PLUGIN_PATH="/opt/gstreamer/lib/x86_64-linux-gnu/gstreamer-1.0:/app/plug
 ENV GST_PLUGIN_SCANNER="/opt/gstreamer/libexec/gstreamer-1.0/gst-plugin-scanner"
 ENV PYTHONPATH="/opt/gstreamer/lib/python3.9/site-packages:${PYTHONPATH}"
 ENV GI_TYPELIB_PATH="/opt/gstreamer/lib/x86_64-linux-gnu/girepository-1.0/:${GI_TYPELIB_PATH}"
-ENV NVIDIA_DRIVER_CAPABILITIES=all
 ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=graphics,video,compute,utility
 
 
 # Optionally, verify Python GI
 RUN python3 -c "import gi; gi.require_version('Gst', '1.0'); from gi.repository import Gst; print('Gst version:', Gst.version_string())"
+RUN mkdir -p /usr/share/glvnd/egl_vendor.d && echo "{\\"file_format_version\\" : \\"1.0.0\\", \\"ICD\\" : { \\"library_path\\" : \\"libEGL_nvidia.so.0\\" } }" > /usr/share/glvnd/egl_vendor.d/10_nvidia.json

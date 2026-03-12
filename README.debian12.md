@@ -46,7 +46,6 @@ Download opencv and opencv_contrib src:
 ```
 curl https://github.com/opencv/opencv/archive/refs/tags/4.8.0.zip -L --output deps/opencv-4.8.0.zip
 curl https://github.com/opencv/opencv_contrib/archive/refs/tags/4.8.0.zip -L --output deps/opencv_contrib-4.8.0.zip
-cd ../..
 ```
 
 Then edit Dockerfiles `OPENCV_VERSION` env to the chosen version, `4.8.0` in the above example.
@@ -59,16 +58,13 @@ Download dlib src:
 # 1. Go into the dependencies folder
 cd deps/
 
-# 2. Delete the corrupted file
-rm dlib.tar.bz2
-
-# 3. Download the official, real Dlib archive (v19.24)
+# 2. Download the official, real Dlib archive (v19.24)
 curl -LO http://dlib.net/files/dlib-19.24.tar.bz2
 
-# 4. Rename it so the Dockerfile finds exactly what it expects
+# 3. Rename it so the Dockerfile finds exactly what it expects
 mv dlib-19.24.tar.bz2 dlib.tar.bz2
 
-# 5. Go back to the main folder
+# 4. Go back to the main folder
 cd ..
 ```
 
