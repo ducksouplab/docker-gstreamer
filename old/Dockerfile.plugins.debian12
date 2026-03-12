@@ -1,5 +1,8 @@
-## This is currently not working!!!!
-FROM arm64v8/debian:12 AS opencv-builder
+## This is currently not working, for this to work, I'll need
+# - Also, ducksoup version built with this base image require that we change nvh264sldec plugin in the pipeline to nvh264dec, as it was renamed in the new version of gstreamer: See here : https://gstreamer.freedesktop.org/releases/1.24/ 
+
+
+FROM debian:12 AS opencv-builder
 
 RUN apt-get update && apt-get install -y \
     cmake \
@@ -145,11 +148,11 @@ RUN apt-get update && apt-get install -y libpython3.11
 RUN apt-get update && apt-get install -y libunwind-dev libdw-dev
 
 # for cuda* plugins (only needed as runtime dependencies, not before GStreamer build)
-#WORKDIR /install/cuda
-#COPY deps/cuda-nvrtc-12-2_12.2.128-1_amd64.deb .
-#COPY deps/cuda-nvrtc-dev-12-2_12.2.128-1_amd64.deb .
-#RUN apt-get install ./cuda-nvrtc-12-2_12.2.128-1_amd64.deb
-#RUN apt-get install ./cuda-nvrtc-dev-12-2_12.2.128-1_amd64.deb
+WORKDIR /install/cuda
+COPY deps/cuda-nvrtc-12-2_12.2.128-1_amd64.deb .
+COPY deps/cuda-nvrtc-dev-12-2_12.2.128-1_amd64.deb .
+RUN apt-get install ./cuda-nvrtc-12-2_12.2.128-1_amd64.deb
+RUN apt-get install ./cuda-nvrtc-dev-12-2_12.2.128-1_amd64.deb
 
 # plugin dependencies: pango
 # RUN apt-get update && apt-get install -y libpango1.0-dev libpangocairo-1.0-0 libcairo2-dev
@@ -158,22 +161,17 @@ COPY --from=gstreamer-builder /gstreamer/install /opt/gstreamer
 COPY --from=gstreamer-builder /dlib/install /opt/dlib
 
 ENV PATH="${PATH}:/opt/gstreamer/bin"
-# Replace x86_64-linux-gnu with aarch64-linux-gnu, and remove or update CUDA paths if not applicable.
-ENV LD_LIBRARY_PATH="/opt/gstreamer/lib/aarch64-linux-gnu:/opt/dlib/lib:/usr/local/lib:${LD_LIBRARY_PATH}"
-ENV LIBRARY_PATH="${LIBRARY_PATH}:/opt/gstreamer/lib/aarch64-linux-gnu:/opt/dlib/lib:/usr/local/lib"
-ENV PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/opt/gstreamer/lib/aarch64-linux-gnu/pkgconfig:/opt/dlib/lib/pkgconfig:/usr/local/lib/pkgconfig"
+ENV LD_LIBRARY_PATH="/opt/gstreamer/lib/x86_64-linux-gnu:/opt/dlib/lib:/usr/local/cuda-12.2/targets/x86_64-linux/lib:/usr/local/lib:${LD_LIBRARY_PATH}"
+ENV LIBRARY_PATH="${LIBRARY_PATH}:/opt/gstreamer/lib/x86_64-linux-gnu:/opt/dlib/lib:/usr/local/cuda-12.2/targets/x86_64-linux/lib:/usr/local/lib"
+ENV PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/opt/gstreamer/lib/x86_64-linux-gnu/pkgconfig:/opt/dlib/lib/pkgconfig:/usr/local/lib/pkgconfig:"
 ENV CPLUS_INCLUDE_PATH="/opt/gstreamer/include/gstreamer-1.0:/opt/dlib/include:/usr/local/include:${CPLUS_INCLUDE_PATH}"
-ENV GST_PLUGIN_PATH="/opt/gstreamer/lib/aarch64-linux-gnu/gstreamer-1.0:/app/plugins"
-# This may also need to be changed if your gst-plugin-scanner is installed in a different location on ARM.
+ENV GST_PLUGIN_PATH="/opt/gstreamer/lib/x86_64-linux-gnu/gstreamer-1.0:/app/plugins"
 ENV GST_PLUGIN_SCANNER="/opt/gstreamer/libexec/gstreamer-1.0/gst-plugin-scanner"
 ENV PYTHONPATH="/opt/gstreamer/lib/python3.9/site-packages:${PYTHONPATH}"
-ENV GI_TYPELIB_PATH="/opt/gstreamer/lib/aarch64-linux-gnu/girepository-1.0:${GI_TYPELIB_PATH}"
-# Remove NVIDIA-related variables if they are not relevant for your ARM build.
-# ENV NVIDIA_DRIVER_CAPABILITIES=all
-# ENV NVIDIA_VISIBLE_DEVICES=all
+ENV GI_TYPELIB_PATH="/opt/gstreamer/lib/x86_64-linux-gnu/girepository-1.0/:${GI_TYPELIB_PATH}"
+ENV NVIDIA_DRIVER_CAPABILITIES=all
+ENV NVIDIA_VISIBLE_DEVICES=all
 
-# Optionally, verify Python GI
-RUN python3 -c "import gi; gi.require_version('Gst', '1.0'); from gi.repository import Gst; print('Gst version:', Gst.version_string())"
 
 # Optionally, verify Python GI
 RUN python3 -c "import gi; gi.require_version('Gst', '1.0'); from gi.repository import Gst; print('Gst version:', Gst.version_string())"

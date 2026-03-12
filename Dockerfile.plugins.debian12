@@ -1,7 +1,3 @@
-## This is currently not working, for this to work, I'll need
-# - Also, ducksoup version built with this base image require that we change nvh264sldec plugin in the pipeline to nvh264dec, as it was renamed in the new version of gstreamer: See here : https://gstreamer.freedesktop.org/releases/1.24/ 
-
-
 FROM debian:12 AS opencv-builder
 
 RUN apt-get update && apt-get install -y \
@@ -53,7 +49,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip3 install meson
 
 # minimize build by providing dev libraries
-RUN apt-get update && apt-get install -y zlib1g-dev libglib2.0-dev libffi-dev libssl-dev libwebrtc-audio-processing-dev
+RUN apt-get update && apt-get install -y zlib1g-dev libglib2.0-dev libffi-dev libssl-dev libwebrtc-audio-processing-dev liblilv-dev lv2-dev
 
 # plugins dependencies: soundtouch
 RUN apt-get update && apt-get install -y libsndfile1-dev libsoundtouch-dev libvpx-dev
@@ -76,14 +72,15 @@ RUN apt-get upgrade -y
 # RUN ["/bin/bash", "-c", "source $HOME/.cargo/env"]
 # RUN $HOME/.cargo/bin/cargo install cargo-c
 
-RUN meson setup --prefix=/gstreamer/install -Dgpl=enabled -Dvaapi=enabled -Drs=disabled \
+RUN meson setup --prefix=/gstreamer/install -Dgpl=enabled -Drs=disabled \
     -Dlibav=enabled -Dgst-plugins-base:pango=enabled -Ddevtools=disabled \
     -Dtests=disabled -Dexamples=disabled -Ddoc=disabled -Dorc=disabled \
     -Dlibsoup:sysprof=disabled -Dbuildtype=release \
     -Dgst-plugins-bad:webrtcdsp=enabled \
-    build 
+    -Dintrospection=disabled \
+    build
 
-RUN ninja -C build -j$(nproc)
+RUN ninja -C build -j4
 RUN meson install -C build
 
 # build dlib
@@ -124,7 +121,12 @@ RUN apt-get update && apt-get install -y \
     libsoup2.4-1 \
     libjack-jackd2-0 \
     wget \
-    libwebrtc-audio-processing1
+    libwebrtc-audio-processing1 \
+    liblilv-0-0 \
+    rubberband-lv2 \
+    calf-plugins \
+    mda-lv2 \
+    x42-plugins
 
 # dlib additionals
 RUN apt-get update && apt-get install -y libopenblas-dev \

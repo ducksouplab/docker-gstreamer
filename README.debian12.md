@@ -2,7 +2,7 @@
 
 Currently this project builds a Debian 12 image with:
 
-- GStreamer 1.22.6
+- GStreamer 1.28.0
 - opencv and opencv_contrib 4.8.0
 - dlib 19.24
 - libnvrtc (from CUDA) 12.2
@@ -35,8 +35,9 @@ Download source and choose version:
 git clone https://gitlab.freedesktop.org/gstreamer/gstreamer.git
 cd gstreamer
 git pull
-git checkout 1.22.6
-cd ..
+git checkout 1.28.0
+cd ../..
+
 ```
 
 #### opencv
@@ -45,6 +46,7 @@ Download opencv and opencv_contrib src:
 ```
 curl https://github.com/opencv/opencv/archive/refs/tags/4.8.0.zip -L --output deps/opencv-4.8.0.zip
 curl https://github.com/opencv/opencv_contrib/archive/refs/tags/4.8.0.zip -L --output deps/opencv_contrib-4.8.0.zip
+cd ../..
 ```
 
 Then edit Dockerfiles `OPENCV_VERSION` env to the chosen version, `4.8.0` in the above example.
@@ -54,8 +56,20 @@ Then edit Dockerfiles `OPENCV_VERSION` env to the chosen version, `4.8.0` in the
 Download dlib src:
 
 ```
-# cd to project root
-curl http://dlib.net/files/dlib-19.24.tar.bz2 --output deps/dlib.tar.bz2
+# 1. Go into the dependencies folder
+cd deps/
+
+# 2. Delete the corrupted file
+rm dlib.tar.bz2
+
+# 3. Download the official, real Dlib archive (v19.24)
+curl -LO http://dlib.net/files/dlib-19.24.tar.bz2
+
+# 4. Rename it so the Dockerfile finds exactly what it expects
+mv dlib-19.24.tar.bz2 dlib.tar.bz2
+
+# 5. Go back to the main folder
+cd ..
 ```
 
 #### nvrtc
@@ -87,20 +101,20 @@ First of all you may check (in the Dockerfile) that the meson build configuratio
 To build with image layers cache and save the output of the build you may:
 
 ```
-docker build -f Dockerfile.debian12 -t debian-gstreamer:deb12-cuda12.2-gst1.22.6 . 2>&1 | tee build.log
+docker build -f Dockerfile.debian12 -t debian-gstreamer:deb12-cuda12.2-gst1.28.0 . 2>&1 | tee build.log
 ```
 
 Without the cache:
 
 ```
 # from the root project folder
-docker build --no-cache -f Dockerfile.debian12 -t debian-gstreamer:deb12-cuda12.2-gst1.22.6 . 2>&1 | tee build.debian12.log
+docker build --no-cache -f Dockerfile.debian12 -t debian-gstreamer:deb12-cuda12.2-gst1.28.0 . 2>&1 | tee build.debian12.log
 
 # run container
-docker run --rm -i -t debian-gstreamer:deb12-cuda12.2-gst1.22.6 bash
+docker run --rm -i -t debian-gstreamer:deb12-cuda12.2-gst1.28.0 bash
 
 # with GPU
-docker run --gpus all --rm -i -t debian-gstreamer:deb12-cuda12.2-gst1.22.6 bash
+docker run --gpus all --rm -i -t debian-gstreamer:deb12-cuda12.2-gst1.28.0 bash
 
 # within the container
 gst-inspect-1.0 nvcodec
@@ -120,28 +134,28 @@ Share image:
 Tag and push image if wanted (`ducksouplab/debian-gstreamer` as an example):
 
 ```
-docker tag debian-gstreamer:deb12-cuda12.2-gst1.22.6 ducksouplab/debian-gstreamer:deb12-cuda12.2-gst1.22.6
-docker push ducksouplab/debian-gstreamer:deb12-cuda12.2-gst1.22.6
+docker tag debian-gstreamer:deb12-cuda12.2-gst1.28.0 ducksouplab/debian-gstreamer:deb12-cuda12.2-gst1.28.0
+docker push ducksouplab/debian-gstreamer:deb12-cuda12.2-gst1.28.0
 ```
 
 #### Build with Plugins
 To build with image layers cache and save the output of the build you may:
 
 ```
-docker build -f Dockerfile.plugins.debian12 -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6 . 2>&1 | tee build.log
+docker build -f Dockerfile.plugins.debian12 -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.28.0 . 2>&1 | tee build.log
 ```
 
 Without the cache:
 
 ```
 # from the root project folder
-docker build --no-cache -f Dockerfile.plugins.debian12 -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6 . 2>&1 | tee build.debian12.log
+docker build --no-cache -f Dockerfile.plugins.debian12 -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.28.0 . 2>&1 | tee build.debian12.log
 
 # run container
-docker run --rm -i -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6 bash
+docker run --rm -i -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.28.0 bash
 
 # with GPU
-docker run --gpus all --rm -i -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6 bash
+docker run --gpus all --rm -i -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.28.0 bash
 
 # within the container
 gst-inspect-1.0 nvcodec
@@ -151,7 +165,7 @@ Create a data folder (mounted as a volume in `docker run`) with an input.mkv fil
 
 ```
 mkdir -p data
-docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6 bash
+docker run --gpus all --rm -i -v "$(pwd)"/data:/data -t debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.28.0 bash
 # now in container
 gst-launch-1.0 filesrc location=/data/input.mkv ! decodebin ! videoconvert ! nvh264enc ! h264parse ! mp4mux ! filesink location=/data/output.mp4
 ```
@@ -161,8 +175,8 @@ Share image:
 Tag and push image if wanted (`ducksouplab/debian-gstreamer` as an example):
 
 ```
-docker tag debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6 ducksouplab/debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6
-docker push ducksouplab/debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.22.6
+docker tag debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.28.0 ducksouplab/debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.28.0
+docker push ducksouplab/debian-gstreamer:deb12-with-plugins-cuda12.2-gst1.28.0
 ```
 
 
@@ -182,9 +196,9 @@ docker push ducksouplab/ubuntu-cuda-gstreamer:ubuntu22.04-cuda11.7.0-gstreamer1.
 To build for ARM (e.g. macs, without CUDA), use the Dockerfile.plugins.arm.debian12 dockerfile
 
 ```
-docker build -f Dockerfile.plugins.arm.debian12 -t debian-gstreamer:deb12-with-plugins-gst1.22.6-arm . 2>&1 | tee build.log
-docker tag debian-gstreamer:deb12-with-plugins-gst1.22.6-arm ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-arm
-docker push ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-arm
+docker build -f Dockerfile.plugins.arm.debian12 -t debian-gstreamer:deb12-with-plugins-gst1.28.0-arm . 2>&1 | tee build.log
+docker tag debian-gstreamer:deb12-with-plugins-gst1.28.0-arm ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.28.0-arm
+docker push ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.28.0-arm
 ```
 
 
@@ -192,12 +206,10 @@ docker push ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-arm
 To build for Intel computers (e.g. macs without CUDA), use the Dockerfile.plugins.debian12.intel.cpu_only dockerfile
 
 ```
-docker build -f Dockerfile.plugins.debian12.intel.cpu_only -t debian-gstreamer:deb12-with-plugins-gst1.22.6-intel-cpu-only . 2>&1 | tee build.log
-docker tag debian-gstreamer:deb12-with-plugins-gst1.22.6-intel-cpu-only ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-intel-cpu-only
-docker push ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.22.6-intel-cpu-only
+docker build -f Dockerfile.plugins.debian12.intel.cpu_only -t debian-gstreamer:deb12-with-plugins-gst1.28.0-intel-cpu-only . 2>&1 | tee build.log
+docker tag debian-gstreamer:deb12-with-plugins-gst1.28.0-intel-cpu-only ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.28.0-intel-cpu-only
+docker push ducksouplab/debian-gstreamer:deb12-with-plugins-gst1.28.0-intel-cpu-only
 ```
-
-
 
 
 ### Image build log sample
