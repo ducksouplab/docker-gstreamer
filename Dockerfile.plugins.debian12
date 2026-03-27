@@ -156,6 +156,17 @@ COPY deps/cuda-nvrtc-dev-12-2_12.2.128-1_amd64.deb .
 RUN apt-get install ./cuda-nvrtc-12-2_12.2.128-1_amd64.deb
 RUN apt-get install ./cuda-nvrtc-dev-12-2_12.2.128-1_amd64.deb
 
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/debian12/x86_64/cuda-keyring_1.1-1_all.deb && \
+    dpkg -i cuda-keyring_1.1-1_all.deb && \
+    rm cuda-keyring_1.1-1_all.deb && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        cuda-cudart-12-3 \
+        libnvinfer10 \
+        libnvonnxparsers10 \
+        libnvinfer-plugin10 && \
+    rm -rf /var/lib/apt/lists/*
+
 # plugin dependencies: pango
 # RUN apt-get update && apt-get install -y libpango1.0-dev libpangocairo-1.0-0 libcairo2-dev
 
@@ -173,6 +184,9 @@ ENV PYTHONPATH="/opt/gstreamer/lib/python3.9/site-packages:${PYTHONPATH}"
 ENV GI_TYPELIB_PATH="/opt/gstreamer/lib/x86_64-linux-gnu/girepository-1.0/:${GI_TYPELIB_PATH}"
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=graphics,video,compute,utility
+
+ENV LD_LIBRARY_PATH="/opt/gstreamer/lib/x86_64-linux-gnu:/opt/dlib/lib:/usr/local/cuda-12.3/targets/x86_64-linux/lib:/usr/local/cuda-12.3/lib64:/usr/local/cuda-12.2/targets/x86_64-linux/lib:/usr/local/lib:${LD_LIBRARY_PATH}"
+ENV LIBRARY_PATH="${LIBRARY_PATH}:/opt/gstreamer/lib/x86_64-linux-gnu:/opt/dlib/lib:/usr/local/cuda-12.3/targets/x86_64-linux/lib:/usr/local/cuda-12.3/lib64:/usr/local/cuda-12.2/targets/x86_64-linux/lib:/usr/local/lib"
 
 
 # Optionally, verify Python GI
